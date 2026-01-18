@@ -1,4 +1,3 @@
-
 # ODUS AI - System Documentation
 
 **Version:** 1.0.0  
@@ -56,7 +55,7 @@ A space for unstructured thought.
     - Parses content to extract structured **Properties** (Key-Value).
     - Auto-generates **Tags**.
     - **Graph Linking:** Semantic analysis finds relationships to existing ideas.
-- **Visualization:** Dual-pane view with a list on the left and a D3 Force-Directed Graph on the right.
+- **Visualization:** A full-canvas, interactive D3 Force-Directed Graph. Nodes can be added with a double-click and edited directly by clicking on them.
 
 ### 2.6 AI Agent (Artifact)
 - **Context Aware:** Has read access to all active projects and files.

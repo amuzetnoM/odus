@@ -1,8 +1,8 @@
 
-import { Component, inject, computed, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, computed, signal, ChangeDetectionStrategy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProjectService, Task } from '../../services/project.service';
-import { GeminiService } from '../../services/gemini.service';
+import { GeminiService, DayBriefing } from '../../services/gemini.service';
 
 @Component({
   selector: 'app-calendar-view',
@@ -34,7 +34,17 @@ import { GeminiService } from '../../services/gemini.service';
                 <div 
                    (click)="openDay(day)"
                    class="min-h-[80px] p-2 relative group hover:bg-white/5 transition-colors cursor-pointer flex flex-col gap-1"
-                   [class.bg-zinc-950_30]="!day.isCurrentMonth">
+                   [class.bg-zinc-950_30]="!day.isCurrentMonth"
+                   [class.bg-red-950_40]="day.dayType === 'CRUNCH'"
+                   [class.border-red-500_20]="day.dayType === 'CRUNCH'"
+                   [class.border-t]="day.dayType === 'CRUNCH'"
+                   [class.bg-indigo-950_40]="day.dayType === 'FOCUS'"
+                   [class.border-indigo-500_20]="day.dayType === 'FOCUS'"
+                   [class.border-t]="day.dayType === 'FOCUS'"
+                   [class.bg-green-950_40]="day.dayType === 'REST'"
+                   [class.border-green-500_20]="day.dayType === 'REST'"
+                   [class.border-t]="day.dayType === 'REST'"
+                   [class.opacity-70]="day.dayType === 'LIGHT'">
                    <div class="flex justify-between items-start">
                        <span 
                           class="text-[10px] font-mono block w-6 h-6 flex items-center justify-center rounded-full"
@@ -86,12 +96,16 @@ import { GeminiService } from '../../services/gemini.service';
                      <!-- AI Summary -->
                      <div class="bg-gradient-to-br from-indigo-900/20 to-purple-900/20 p-4 rounded-lg border border-white/5">
                         <div class="flex items-center gap-2 mb-2">
-                           <div class="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></div>
+                           <div class="w-2 h-2 bg-indigo-400 rounded-full" [class.animate-pulse]="isAnalyzingDay()"></div>
                            <span class="text-[10px] font-bold text-indigo-300 uppercase tracking-widest">AI Analysis</span>
                         </div>
-                        <p class="text-xs text-zinc-300 leading-relaxed font-light">
-                           {{ getDayAnalysis(day) }}
-                        </p>
+                        @if (isAnalyzingDay() && !day.analysis) {
+                            <p class="text-xs text-zinc-400 italic">Generating briefing...</p>
+                        } @else {
+                            <p class="text-xs text-zinc-300 leading-relaxed font-light">
+                               {{ day.analysis?.briefing || "No tasks scheduled for AI analysis." }}
+                            </p>
+                        }
                      </div>
 
                      <!-- Sections -->
@@ -158,8 +172,45 @@ export class CalendarViewComponent {
   
   currentDate = signal(new Date());
   selectedDay = signal<any>(null);
+  analysisCache = signal<Map<string, DayBriefing>>(new Map());
+  isAnalyzingDay = signal(false);
 
   currentMonth = computed(() => this.currentDate());
+
+  constructor() {
+    effect(() => {
+        // When the calendar view changes, pre-fetch analyses for days with tasks
+        const days = this.calendarDays();
+        this.fetchAnalysesForVisibleDays(days);
+    }, { allowSignalWrites: true });
+  }
+
+  async fetchAnalysesForVisibleDays(days: any[]) {
+      const daysToFetch = days.filter(day => {
+          const key = day.date.toISOString().split('T')[0];
+          const hasTasks = day.starting.length > 0 || day.due.length > 0 || day.ongoing.length > 0;
+          return hasTasks && !this.analysisCache().has(key);
+      });
+
+      if (daysToFetch.length === 0) return;
+      
+      const promises = daysToFetch.map(async day => {
+          const key = day.date.toISOString().split('T')[0];
+          const analysis = await this.geminiService.getDailyBriefing({
+              starting: day.starting, due: day.due, ongoing: day.ongoing
+          }, this.projectService.metrics());
+          return { key, analysis };
+      });
+
+      const results = await Promise.all(promises);
+
+      this.analysisCache.update(cache => {
+          results.forEach(result => {
+              if (result.analysis) cache.set(result.key, result.analysis);
+          });
+          return new Map(cache);
+      });
+  }
 
   calendarDays = computed(() => {
     const year = this.currentDate().getFullYear();
@@ -169,41 +220,39 @@ export class CalendarViewComponent {
     const startOffset = firstDay.getDay(); 
     const daysInMonth = lastDay.getDate();
     
-    // Algorithm Optimization: Pre-process tasks into a Map
-    const taskMap = new Map<string, {starting: any[], due: any[], ongoing: any[]}>();
+    const taskMap = new Map<string, {starting: any[], due: any[]}>();
     const tasks = this.projectService.allTasks();
     
-    // Single pass over tasks O(N)
     for (const t of tasks) {
         if (t.startDate) {
-           if (!taskMap.has(t.startDate)) taskMap.set(t.startDate, {starting: [], due: [], ongoing: []});
+           if (!taskMap.has(t.startDate)) taskMap.set(t.startDate, {starting: [], due: []});
            taskMap.get(t.startDate)!.starting.push(t);
         }
         if (t.endDate) {
-           if (!taskMap.has(t.endDate)) taskMap.set(t.endDate, {starting: [], due: [], ongoing: []});
+           if (!taskMap.has(t.endDate)) taskMap.set(t.endDate, {starting: [], due: []});
            taskMap.get(t.endDate)!.due.push(t);
         }
-        // Ongoing logic is slightly harder to Map O(1), but we can optimize.
-        // For simplicity in this constrained context, we handle ongoing in the daily loop or optimize range.
-        // Given complexity, let's keep ongoing loop but it's lighter if we filter only relevant ranges.
     }
 
     const days = [];
     
-    // Fillers
-    for (let i = startOffset - 1; i >= 0; i--) {
-       days.push({ date: new Date(year, month, -i), isCurrentMonth: false, isToday: false, starting: [], due: [], ongoing: [], previewTasks: [] });
+    for (let i = 0; i < startOffset; i++) {
+       const d = new Date(year, month, i - startOffset + 1);
+       const key = d.toISOString().split('T')[0];
+       days.push({ 
+           date: d, 
+           isCurrentMonth: false, 
+           isToday: false, 
+           starting: [], due: [], ongoing: [], previewTasks: [],
+           dayType: this.analysisCache().get(key)?.dayType
+       });
     }
 
-    // Days O(30)
     for (let i = 1; i <= daysInMonth; i++) {
         const d = new Date(year, month, i);
         const dStr = d.toISOString().split('T')[0];
         
-        const bucket = taskMap.get(dStr) || {starting: [], due: [], ongoing: []};
-        
-        // Only run ongoing filter for tasks that actually span ranges
-        // To optimize, strictly we'd use an interval tree, but native filter is fast enough for <1000 items if we check simple strings.
+        const bucket = taskMap.get(dStr) || {starting: [], due: []};
         const ongoing = tasks.filter((t: any) => 
             t.startDate && t.endDate && t.startDate < dStr && t.endDate > dStr
         );
@@ -217,14 +266,24 @@ export class CalendarViewComponent {
             ongoing,
             startingCount: bucket.starting.length,
             dueCount: bucket.due.length,
-            previewTasks: [...bucket.starting, ...bucket.due, ...ongoing].slice(0, 3)
+            previewTasks: [...bucket.starting, ...bucket.due, ...ongoing].slice(0, 3),
+            dayType: this.analysisCache().get(dStr)?.dayType
         });
     }
 
-    // Fillers
-    const remaining = 42 - days.length;
-    for (let i = 1; i <= remaining; i++) {
-        days.push({ date: new Date(year, month + 1, i), isCurrentMonth: false, isToday: false, starting: [], due: [], ongoing: [], previewTasks: [] });
+    const totalCells = 42; // 6 rows of 7
+    while (days.length < totalCells) {
+        const lastDay = days[days.length - 1].date;
+        const nextDay = new Date(lastDay);
+        nextDay.setDate(lastDay.getDate() + 1);
+        const key = nextDay.toISOString().split('T')[0];
+        days.push({ 
+            date: nextDay, 
+            isCurrentMonth: false, 
+            isToday: false, 
+            starting: [], due: [], ongoing: [], previewTasks: [],
+            dayType: this.analysisCache().get(key)?.dayType
+        });
     }
 
     return days;
@@ -236,21 +295,26 @@ export class CalendarViewComponent {
      this.currentDate.set(newDate);
   }
 
-  openDay(day: any) {
-     this.selectedDay.set(day);
-  }
+  async openDay(day: any) {
+     const key = day.date.toISOString().split('T')[0];
+     let analysis = this.analysisCache().get(key);
 
-  getDayAnalysis(day: any): string {
-      const load = day.starting.length + day.due.length + day.ongoing.length;
-      if (load === 0) return "Clear schedule. Perfect day for deep work or planning ahead.";
-      
-      let msg = "";
-      if (day.due.length > 0) msg += `Critical Focus: ${day.due.length} artifacts due today. `;
-      if (day.starting.length > 0) msg += `New Initiatives: ${day.starting.length} tasks kicking off. `;
-      
-      if (day.due.length > 3) return "High Alert: Heavy deadline convergence detected. Prioritize immediately.";
-      if (load > 5) return "Heavy Load: Schedule is dense. Recommend deferring non-critical items.";
-      
-      return msg || "Balanced schedule. Standard operational cadence.";
+     this.selectedDay.set({ ...day, analysis: analysis || null });
+     this.isAnalyzingDay.set(!analysis);
+
+     if (!analysis) {
+        analysis = await this.geminiService.getDailyBriefing({
+            starting: day.starting, due: day.due, ongoing: day.ongoing
+        }, this.projectService.metrics());
+        
+        if (analysis) {
+            this.analysisCache.update(cache => {
+                cache.set(key, analysis!);
+                return new Map(cache);
+            });
+            this.selectedDay.update(d => ({ ...d, analysis }));
+        }
+        this.isAnalyzingDay.set(false);
+     }
   }
 }

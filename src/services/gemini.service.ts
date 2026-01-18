@@ -13,6 +13,11 @@ export interface AgentResponse {
   };
 }
 
+export interface DayBriefing {
+  briefing: string;
+  dayType: 'FOCUS' | 'CRUNCH' | 'BALANCED' | 'LIGHT' | 'REST';
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -25,6 +30,69 @@ export class GeminiService {
   }
 
   // --- Smart Features ---
+
+  async getDailyBriefing(dayTasks: { starting: any[], due: any[], ongoing: any[] }, overallMetrics: any): Promise<DayBriefing> {
+    const model = 'gemini-2.5-flash';
+    
+    const context = `
+      Overall Project Health: ${overallMetrics.health}%
+      Total Active Tasks: ${overallMetrics.inProgress}
+      Total Critical Tasks: ${overallMetrics.highPriority}
+    `;
+
+    const dayData = `
+      Tasks Starting Today: ${dayTasks.starting.length}
+      Tasks Due Today: ${dayTasks.due.length}
+      Tasks In-Flight: ${dayTasks.ongoing.length}
+      
+      Details of Due Tasks: ${JSON.stringify(dayTasks.due.map(t => t.title))}
+    `;
+
+    const prompt = `
+      You are an executive assistant AI for a founder. Your goal is to provide a smart, intelligent, and personal daily briefing.
+      Analyze the provided overall project context and the specific tasks for today.
+
+      Based on the workload, provide:
+      1. A short, insightful 'briefing' (2-3 sentences). Be encouraging but realistic. If it's a heavy day, acknowledge it. If it's a light day, suggest it's good for deep work or planning. If there are critical deadlines, highlight them.
+      2. A 'dayType' classification. This helps the user visually scan their week.
+         - 'CRUNCH': Many high-priority tasks or deadlines are converging. High-stress day.
+         - 'FOCUS': Moderate load, good for deep work on key tasks.
+         - 'BALANCED': A standard mix of tasks and meetings. Normal operational tempo.
+         - 'LIGHT': Very few tasks. Good for planning, learning, or personal development.
+         - 'REST': No tasks. Explicitly recommend taking a break or a day off to recharge.
+
+      Context:
+      ${context}
+
+      Today's Agenda:
+      ${dayData}
+    `;
+
+    try {
+        const response = await this.ai.models.generateContent({
+            model,
+            contents: prompt,
+            config: {
+                responseMimeType: 'application/json',
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        briefing: { type: Type.STRING },
+                        dayType: { type: Type.STRING, enum: ['FOCUS', 'CRUNCH', 'BALANCED', 'LIGHT', 'REST'] }
+                    },
+                    required: ['briefing', 'dayType']
+                }
+            }
+        });
+        return JSON.parse(response.text || '{}');
+    } catch (e) {
+        console.error("Daily briefing generation failed", e);
+        return {
+            briefing: 'Could not generate AI analysis for today.',
+            dayType: 'BALANCED'
+        };
+    }
+  }
 
   async routeTaskToProject(taskTitle: string, projects: Project[]): Promise<string> {
     if (projects.length === 0) return 'personal';

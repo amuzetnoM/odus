@@ -36,7 +36,7 @@ export class MindService {
         // Initial Tutorial Node
         this.nodesState.set([{
             id: 'root',
-            title: 'Nexus Core',
+            title: 'odus core',
             content: 'Central node of the idea graph.',
             properties: { type: 'system', status: 'active' },
             tags: ['ROOT', 'SYSTEM'],
