@@ -380,6 +380,50 @@ export class GeminiService {
 
     return tasksWithIds;
   }
+  
+  // --- New: Project Risk Analysis ---
+  async analyzeProjectRisks(project: Project): Promise<string> {
+      const model = 'gemini-2.5-flash';
+      
+      const simplifiedTasks = project.tasks.map(t => ({
+          id: t.id,
+          title: t.title,
+          status: t.status,
+          priority: t.priority,
+          dependencies: t.dependencyIds,
+          startDate: t.startDate,
+          endDate: t.endDate
+      }));
+      
+      const context = JSON.stringify(simplifiedTasks);
+      
+      const prompt = `
+        Act as a Senior Project Manager. Analyze this project schedule for specific risks.
+        
+        Tasks Data:
+        ${context}
+        
+        Perform the following checks:
+        1. **Circular Dependencies:** Are there any logical loops?
+        2. **Bottlenecks:** Are there single tasks that block many others?
+        3. **Critical Path:** Are there high-priority items with no start date or blocking high-value chains?
+        4. **Optimizations:** Suggest 1-2 quick wins.
+        
+        Format your response in clean **Markdown** (use bullet points, bold text for emphasis).
+        Keep it concise (max 300 words).
+      `;
+      
+      try {
+          const response = await this.ai.models.generateContent({
+              model,
+              contents: prompt
+          });
+          return response.text || "Analysis complete but no output generated.";
+      } catch (e) {
+          console.error('Risk analysis failed', e);
+          return "Unable to perform analysis at this time.";
+      }
+  }
 
   // --- Existing Methods (Preserved) ---
   async generateProjectStructure(description: string): Promise<{ title: string, description: string, tasks: Task[] }> {

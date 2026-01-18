@@ -170,7 +170,7 @@ import { ToastComponent } from './components/ui/toast.component';
            @case ('dashboard') { <app-dashboard /> }
            @case ('calendar') { <app-calendar-view /> }
            @case ('drive') { <app-drive-view /> }
-           @case ('github') { <app-github-view /> }
+           @case ('github') { <app-github-view class="h-full block" /> }
            @case ('mind') { <app-mind-board /> }
            @case ('projects') { 
               @if (projectService.activeProjects().length === 0) {

@@ -2,12 +2,16 @@
 import { Injectable, signal, computed, effect, inject } from '@angular/core';
 import { NotificationService } from './notification.service';
 import { PersistenceService } from './persistence.service';
+import { AuthService } from './auth.service';
 
 export type TaskStatus = 'todo' | 'in-progress' | 'done';
 export type Priority = 'low' | 'medium' | 'high';
 
 export interface Comment {
   id: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
   text: string;
   createdAt: string;
 }
@@ -44,7 +48,21 @@ export interface Project {
   tasks: Task[];
   createdAt: string;
   isArchived?: boolean;
+  color?: string; // Hex color for UI distinction
 }
+
+const PROJECT_COLORS = [
+    '#3b82f6', // blue-500
+    '#10b981', // emerald-500
+    '#f59e0b', // amber-500
+    '#ef4444', // red-500
+    '#8b5cf6', // violet-500
+    '#ec4899', // pink-500
+    '#06b6d4', // cyan-500
+    '#f97316', // orange-500
+    '#14b8a6', // teal-500
+    '#d946ef', // fuchsia-500
+];
 
 @Injectable({
   providedIn: 'root'
@@ -52,6 +70,7 @@ export interface Project {
 export class ProjectService {
   private notification = inject(NotificationService);
   private persistence = inject(PersistenceService);
+  private authService = inject(AuthService);
 
   private projectsState = signal<Project[]>([]);
   private activeProjectIdsState = signal<string[]>([]);
@@ -73,8 +92,20 @@ export class ProjectService {
   readonly allTasks = computed(() => {
     // Optimization: This computation can be expensive. 
     // However, signal memoization handles dependency tracking efficiently.
-    const projectTasks = this.projectsState().flatMap(p => p.tasks.map(t => ({ ...t, projectId: p.id, projectTitle: p.title })));
-    const personal = this.personalTasksState().map(t => ({ ...t, projectId: 'personal', projectTitle: 'Personal' }));
+    const projectTasks = this.projectsState().flatMap(p => 
+        p.tasks.map(t => ({ 
+            ...t, 
+            projectId: p.id, 
+            projectTitle: p.title,
+            projectColor: p.color || '#71717a'
+        }))
+    );
+    const personal = this.personalTasksState().map(t => ({ 
+        ...t, 
+        projectId: 'personal', 
+        projectTitle: 'Personal',
+        projectColor: '#ffffff'
+    }));
     return [...projectTasks, ...personal];
   });
 
@@ -92,7 +123,7 @@ export class ProjectService {
           if (t.status === 'done') completed++;
           if (t.status === 'in-progress') inProgress++;
           if (t.priority === 'high' && t.status !== 'done') highPriority++;
-          if (t.inFocusList) focusCount++;
+          if (t.inFocusList && t.status !== 'done') focusCount++;
       }
       
       const health = total === 0 ? 100 : Math.round((completed / total) * 100);
@@ -143,12 +174,15 @@ export class ProjectService {
   }
 
   addProject(title: string, description: string, tasks: Task[]) {
+    const randomColor = PROJECT_COLORS[Math.floor(Math.random() * PROJECT_COLORS.length)];
+    
     const newProject: Project = {
       id: crypto.randomUUID(),
       title,
       description,
       tasks: tasks.map(t => ({...t, createdAt: t.createdAt || new Date().toISOString()})),
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      color: randomColor
     };
     
     // Auto-index dependencies in background
@@ -310,5 +344,26 @@ export class ProjectService {
           return { task: { ...foundPersonal }, projectId: 'personal' };
       }
       return null;
+  }
+  
+  addComment(projectId: string, taskId: string, text: string) {
+      const user = this.authService.currentUser();
+      const newComment: Comment = {
+          id: crypto.randomUUID(),
+          userId: user.id,
+          userName: user.name,
+          userAvatar: user.avatar,
+          text: text,
+          createdAt: new Date().toISOString()
+      };
+      
+      const taskContainer = projectId === 'personal' 
+          ? this.personalTasksState().find(t => t.id === taskId)
+          : this.projectsState().find(p => p.id === projectId)?.tasks.find(t => t.id === taskId);
+          
+      if (taskContainer) {
+          const updatedComments = [...(taskContainer.comments || []), newComment];
+          this.updateTask(projectId, taskId, { comments: updatedComments });
+      }
   }
 }

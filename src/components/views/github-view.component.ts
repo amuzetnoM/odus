@@ -12,12 +12,17 @@ import { ProjectService } from '../../services/project.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="h-full flex flex-col bg-zinc-950/20">
+    <div class="h-full flex flex-col bg-zinc-950/20 relative overflow-hidden">
        <!-- Toolbar -->
-       <div class="h-12 border-b border-white/5 bg-zinc-900/40 backdrop-blur flex items-center justify-between px-4 shrink-0">
-          <div class="flex items-center gap-3">
-             <div class="w-2 h-2 rounded-full bg-white shadow-[0_0_8px_white]"></div>
-             <span class="text-xs font-bold tracking-widest text-zinc-300 uppercase">GitHub Integration</span>
+       <div class="h-14 border-b border-white/5 bg-zinc-900/40 backdrop-blur flex items-center justify-between px-4 shrink-0 z-50">
+          <div class="flex items-center gap-4">
+             <button (click)="toggleRepoList()" class="text-zinc-400 hover:text-white transition-colors p-1 rounded hover:bg-white/5">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+             </button>
+             <div class="flex items-center gap-3">
+                 <div class="w-2 h-2 rounded-full bg-white shadow-[0_0_8px_white]"></div>
+                 <span class="text-xs font-bold tracking-widest text-zinc-300 uppercase hidden sm:block">GitHub Intelligence</span>
+             </div>
           </div>
           
           <div class="flex gap-2 items-center">
@@ -26,87 +31,108 @@ import { ProjectService } from '../../services/project.service';
                    [ngModel]="token()"
                    (change)="updateToken($event)"
                    type="password"
-                   class="bg-zinc-950 border border-zinc-800 rounded-sm px-2 py-1 text-[10px] text-zinc-400 w-32 focus:w-64 focus:text-white focus:border-zinc-600 transition-all outline-none font-mono"
+                   class="bg-zinc-950 border border-zinc-800 rounded-sm px-3 py-1.5 text-[10px] text-zinc-400 w-32 focus:w-64 focus:text-white focus:border-zinc-600 transition-all outline-none font-mono tracking-wide"
                    placeholder="GH_TOKEN"
                  />
-                 <div class="absolute right-2 top-1.5 w-1.5 h-1.5 rounded-full" [class.bg-green-500]="!!token()" [class.bg-red-500]="!token()"></div>
+                 <div class="absolute right-2 top-2 w-1.5 h-1.5 rounded-full" [class.bg-green-500]="!!token()" [class.bg-red-500]="!token()"></div>
              </div>
              <button (click)="fetchRepos()" class="bg-white/5 hover:bg-white/10 border border-white/5 text-zinc-300 p-1.5 rounded-sm transition-colors" title="Sync Repos">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
              </button>
           </div>
        </div>
 
-       <div class="flex-1 flex overflow-hidden">
+       <!-- Main Content Area -->
+       <div class="flex-1 relative overflow-hidden flex min-h-0">
           
-          <!-- Compact Repo List (Sidebar) -->
-          <div class="w-72 flex flex-col border-r border-white/5 bg-zinc-900/10">
-             <div class="p-2 border-b border-white/5 space-y-2">
+          <!-- Floating Repo List (Sidebar) -->
+          <div 
+             class="absolute top-0 bottom-0 left-0 w-80 bg-zinc-900/95 backdrop-blur-xl border-r border-white/10 z-40 transition-transform duration-300 shadow-2xl flex flex-col transform h-full"
+             [class.-translate-x-full]="!isRepoListOpen()"
+             [class.translate-x-0]="isRepoListOpen()">
+             
+             <!-- Sidebar Header/Filters -->
+             <div class="p-4 border-b border-white/5 space-y-3 bg-zinc-950/50 shrink-0">
+                <div class="flex justify-between items-center">
+                    <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Repositories</span>
+                    <!-- Close button always available since it's a floating drawer now -->
+                    <button (click)="isRepoListOpen.set(false)" class="text-zinc-500 hover:text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
                 <input 
                   [(ngModel)]="searchQuery" 
-                  class="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-[10px] text-zinc-300 focus:outline-none placeholder:text-zinc-600"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-xs text-zinc-300 focus:outline-none focus:border-zinc-600 placeholder:text-zinc-700"
                   placeholder="Filter repositories..."
                 />
-                <!-- Filters -->
                 <div class="flex gap-2">
                     <button 
                        (click)="filterSourceOnly.set(!filterSourceOnly())"
                        [class.bg-zinc-700]="filterSourceOnly()"
                        [class.text-white]="filterSourceOnly()"
-                       class="flex-1 py-1 rounded bg-zinc-900 border border-zinc-800 text-[9px] text-zinc-500 uppercase tracking-wide hover:border-zinc-600 transition-colors">
-                       Source Only
+                       class="flex-1 py-1.5 rounded bg-zinc-950 border border-zinc-800 text-[10px] text-zinc-500 uppercase tracking-wide hover:border-zinc-600 transition-colors">
+                       Source
                     </button>
                     <button 
                        (click)="filterActiveOnly.set(!filterActiveOnly())"
                        [class.bg-zinc-700]="filterActiveOnly()"
                        [class.text-white]="filterActiveOnly()"
-                       class="flex-1 py-1 rounded bg-zinc-900 border border-zinc-800 text-[9px] text-zinc-500 uppercase tracking-wide hover:border-zinc-600 transition-colors">
-                       Active Only
+                       class="flex-1 py-1.5 rounded bg-zinc-950 border border-zinc-800 text-[10px] text-zinc-500 uppercase tracking-wide hover:border-zinc-600 transition-colors">
+                       Active
                     </button>
                 </div>
              </div>
-             <div class="flex-1 overflow-y-auto custom-scrollbar p-1 space-y-0.5">
+
+             <!-- List -->
+             <div class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1 min-h-0">
                 @for (repo of filteredRepos(); track repo.id) {
                    <button 
                      (click)="selectRepo(repo)"
                      [class.bg-white_10]="selectedRepo()?.id === repo.id"
                      [class.text-white]="selectedRepo()?.id === repo.id"
                      [class.text-zinc-400]="selectedRepo()?.id !== repo.id"
-                     class="w-full text-left px-3 py-2 rounded-sm hover:bg-white/5 transition-all flex items-center justify-between group">
-                     <div class="flex items-center gap-2 min-w-0">
+                     class="w-full text-left px-3 py-2.5 rounded hover:bg-white/5 transition-all flex items-center justify-between group border border-transparent hover:border-white/5">
+                     <div class="flex items-center gap-3 min-w-0">
                         @if (repo.fork) {
-                            <svg class="w-3 h-3 shrink-0 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                            <svg class="w-4 h-4 shrink-0 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
                         } @else {
-                            <svg class="w-3 h-3 shrink-0 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                            <svg class="w-4 h-4 shrink-0 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
                         }
-                        <span class="text-[11px] truncate font-medium">{{ repo.name }}</span>
+                        <span class="text-xs truncate font-medium">{{ repo.name }}</span>
                      </div>
                      @if (repo.private) { 
-                        <span class="text-[8px] bg-zinc-800 px-1 rounded text-zinc-500 group-hover:bg-zinc-700">Lock</span> 
+                        <span class="text-[9px] bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-500 group-hover:bg-zinc-700">Lock</span> 
                      }
                    </button>
                 }
              </div>
-             <div class="p-2 border-t border-white/5 text-[9px] text-zinc-600 text-center font-mono">
+             <div class="p-3 border-t border-white/5 text-[10px] text-zinc-600 text-center font-mono bg-zinc-950/50 shrink-0">
                 {{ filteredRepos().length }} / {{ repos().length }} Repositories
              </div>
           </div>
 
-          <!-- Analysis / Detail Panel -->
-          <div class="flex-1 flex flex-col min-w-0 bg-zinc-950/30">
+          <!-- Backdrop -->
+          @if (isRepoListOpen()) {
+             <div (click)="isRepoListOpen.set(false)" class="absolute inset-0 bg-black/50 backdrop-blur-sm z-30 animate-fade-in"></div>
+          }
+
+          <!-- Analysis / Detail Panel (Full Width) -->
+          <div class="flex-1 flex flex-col min-w-0 bg-zinc-950/30 overflow-hidden relative z-10 h-full">
              @if (selectedRepo(); as repo) {
                 <!-- Repo Header -->
-                <div class="p-6 border-b border-white/5 flex justify-between items-start bg-zinc-900/20">
-                   <div>
-                       <div class="flex items-baseline gap-3">
-                          <h1 class="text-2xl font-light text-white tracking-tight">{{ repo.name }}</h1>
-                          <span class="text-[10px] px-1.5 py-0.5 rounded border border-zinc-800 text-zinc-500 uppercase">{{ repo.visibility }}</span>
-                          @if(repo.fork) { <span class="text-[10px] px-1.5 py-0.5 rounded border border-zinc-800 text-zinc-600 uppercase">Fork</span> }
-                          @if(repo.archived) { <span class="text-[10px] px-1.5 py-0.5 rounded border border-red-900 text-red-400 uppercase">Archived</span> }
+                <div class="p-4 sm:p-6 border-b border-white/5 flex flex-col sm:flex-row justify-between items-start bg-zinc-900/20 gap-4 shrink-0">
+                   <div class="min-w-0 flex-1">
+                       <div class="flex items-center gap-3 flex-wrap">
+                          <h1 class="text-2xl font-light text-white tracking-tight truncate">{{ repo.name }}</h1>
+                          <div class="flex gap-2">
+                             <span class="text-[10px] px-1.5 py-0.5 rounded border border-zinc-800 text-zinc-500 uppercase">{{ repo.visibility }}</span>
+                             @if(repo.fork) { <span class="text-[10px] px-1.5 py-0.5 rounded border border-zinc-800 text-zinc-600 uppercase">Fork</span> }
+                             @if(repo.archived) { <span class="text-[10px] px-1.5 py-0.5 rounded border border-red-900 text-red-400 uppercase">Archived</span> }
+                          </div>
                        </div>
                        <p class="text-xs text-zinc-500 mt-2 max-w-2xl leading-relaxed">{{ repo.description || 'No description provided.' }}</p>
                        
-                       <div class="flex gap-4 mt-4 text-[10px] text-zinc-400 font-mono">
+                       <div class="flex gap-4 mt-4 text-[10px] text-zinc-400 font-mono flex-wrap">
                           <span class="flex items-center gap-1">
                              <div class="w-2 h-2 rounded-full bg-yellow-500/50"></div> {{ repo.language || 'Unknown' }}
                           </span>
@@ -118,12 +144,12 @@ import { ProjectService } from '../../services/project.service';
                    <button 
                      (click)="analyzeAndPopulate()" 
                      [disabled]="isAnalyzing()"
-                     class="group relative w-32 h-9 bg-white text-black text-xs font-bold uppercase tracking-widest overflow-hidden transition-all hover:bg-zinc-200 disabled:opacity-50 flex items-center justify-center rounded-sm">
+                     class="group relative w-full sm:w-32 h-10 bg-white text-black text-xs font-bold uppercase tracking-widest overflow-hidden transition-all hover:bg-zinc-200 disabled:opacity-50 flex items-center justify-center rounded-sm shrink-0">
                         @if (isAnalyzing()) {
                             <div class="w-4 h-4 border-2 border-zinc-400 border-t-black rounded-full animate-spin"></div>
                         } @else {
                             <div class="flex items-center gap-2">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                                 <span>ADD</span>
                             </div>
                         }
@@ -131,7 +157,7 @@ import { ProjectService } from '../../services/project.service';
                 </div>
 
                 <!-- Terminal / Content Area -->
-                <div class="flex-1 p-6 overflow-hidden flex flex-col">
+                <div class="flex-1 p-4 sm:p-6 overflow-hidden flex flex-col min-h-0">
                     <div class="flex-1 bg-black border border-zinc-800 rounded-lg overflow-hidden flex flex-col font-mono text-xs shadow-2xl relative group">
                         <!-- Scanline Effect -->
                         <div class="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-10 bg-[length:100%_2px,3px_100%] pointer-events-none opacity-20"></div>
@@ -175,11 +201,12 @@ import { ProjectService } from '../../services/project.service';
                 </div>
 
              } @else {
-                <div class="h-full flex flex-col items-center justify-center text-zinc-600">
+                <div class="h-full flex flex-col items-center justify-center text-zinc-600 p-8 text-center">
                    <div class="w-16 h-16 border border-zinc-800 rounded-full flex items-center justify-center mb-4 bg-zinc-900/50">
-                      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                      <svg class="w-8 h-8 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
                    </div>
-                   <p class="text-xs font-mono uppercase tracking-widest">Select Repository</p>
+                   <h3 class="text-lg font-light text-zinc-400 tracking-widest mb-2">NO SIGNAL</h3>
+                   <p class="text-xs font-mono uppercase tracking-widest text-zinc-600">Select a repository from the stream to begin analysis.</p>
                 </div>
              }
           </div>
@@ -187,8 +214,12 @@ import { ProjectService } from '../../services/project.service';
     </div>
   `,
   styles: [`
+    :host { display: block; height: 100%; }
     @keyframes type { from { opacity: 0; transform: translateX(-5px); } to { opacity: 1; transform: translateX(0); } }
     .animate-type { animation: type 0.1s ease-out forwards; }
+    
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .animate-fade-in { animation: fadeIn 0.2s ease-out forwards; }
   `]
 })
 export class GithubViewComponent {
@@ -208,6 +239,7 @@ export class GithubViewComponent {
 
   isAnalyzing = signal(false);
   analysisLog = signal<{time: Date, message: string}[]>([]);
+  isRepoListOpen = signal(true);
 
   filteredRepos = computed(() => {
     const q = this.searchQuery().toLowerCase();
@@ -227,16 +259,26 @@ export class GithubViewComponent {
   constructor() {
       this.token.set(this.githubService.getToken());
       if (this.token()) this.fetchRepos();
+      
+      // Responsive check on init
+      if (window.innerWidth < 1024) {
+          this.isRepoListOpen.set(false);
+      }
   }
 
   updateToken(event: any) {
       this.githubService.setToken(event.target.value);
+  }
+  
+  toggleRepoList() {
+      this.isRepoListOpen.set(!this.isRepoListOpen());
   }
 
   async fetchRepos() {
       try {
           const repos = await this.githubService.getUserRepos();
           this.repos.set(repos);
+          this.isRepoListOpen.set(true);
       } catch (e) {
           alert('Failed to sync GitHub. Check Token.');
       }
@@ -245,6 +287,11 @@ export class GithubViewComponent {
   selectRepo(repo: any) {
       this.selectedRepo.set(repo);
       this.analysisLog.set([]);
+      
+      // Auto close on smaller screens for better UX
+      if (window.innerWidth < 1024) {
+          this.isRepoListOpen.set(false);
+      }
   }
 
   log(message: string) {

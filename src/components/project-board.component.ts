@@ -26,6 +26,18 @@ type ProjectView = 'kanban' | 'gantt' | 'graph';
           
           <div class="flex gap-2 shrink-0">
               <button 
+                (click)="analyzeRisks()" 
+                [disabled]="isAnalyzing()"
+                class="px-2 py-1 text-zinc-400 hover:text-white border border-transparent hover:border-white/20 bg-zinc-900/50 rounded transition-all text-[10px] font-mono uppercase tracking-wide flex items-center gap-1 disabled:opacity-50">
+                @if (isAnalyzing()) {
+                   <div class="w-3 h-3 border border-zinc-500 border-t-white rounded-full animate-spin"></div>
+                } @else {
+                   <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                   <span>Risk Scan</span>
+                }
+              </button>
+
+              <button 
                 (click)="generateTask()" 
                 [disabled]="isGeneratingTask()"
                 class="px-2 py-1 text-zinc-400 hover:text-white border border-transparent hover:border-white/20 bg-zinc-900/50 rounded transition-all text-[10px] font-mono uppercase tracking-wide flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
@@ -82,6 +94,19 @@ type ProjectView = 'kanban' | 'gantt' | 'graph';
            }
         }
       </div>
+      
+      <!-- Risk Analysis Modal -->
+      @if (riskReport()) {
+          <div class="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-8" (click)="riskReport.set(null)">
+              <div class="bg-zinc-900 border border-white/10 rounded-xl p-6 max-w-2xl w-full max-h-full overflow-y-auto shadow-2xl relative" (click)="$event.stopPropagation()">
+                  <div class="flex justify-between items-center mb-4">
+                      <h3 class="text-white font-light text-lg uppercase tracking-widest">Risk Analysis Report</h3>
+                      <button (click)="riskReport.set(null)" class="text-zinc-500 hover:text-white">✕</button>
+                  </div>
+                  <div class="prose prose-invert prose-sm font-light text-zinc-300" [innerHTML]="parsedRiskReport()"></div>
+              </div>
+          </div>
+      }
 
       @if (selectedTask()) {
         <app-task-detail 
@@ -102,7 +127,9 @@ export class ProjectBoardComponent {
   
   currentView = signal<ProjectView>('kanban');
   isGeneratingTask = signal(false);
+  isAnalyzing = signal(false);
   selectedTask = signal<Task | null>(null);
+  riskReport = signal<string | null>(null);
 
   getViewClass(view: ProjectView) {
     return this.currentView() === view 
@@ -138,5 +165,28 @@ export class ProjectBoardComponent {
     } finally {
       this.isGeneratingTask.set(false);
     }
+  }
+
+  async analyzeRisks() {
+      if (this.isAnalyzing()) return;
+      this.isAnalyzing.set(true);
+      try {
+          const report = await this.geminiService.analyzeProjectRisks(this.project());
+          this.riskReport.set(report);
+      } catch (e) {
+          this.riskReport.set("Failed to generate risk analysis.");
+      } finally {
+          this.isAnalyzing.set(false);
+      }
+  }
+
+  parsedRiskReport() {
+      const raw = this.riskReport() || '';
+      return raw
+        .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>')
+        .replace(/^# (.*$)/gim, '<h1 class="text-xl font-bold mb-2">$1</h1>')
+        .replace(/^## (.*$)/gim, '<h2 class="text-lg font-bold mb-2 mt-4 text-white">$1</h2>')
+        .replace(/^\- (.*$)/gim, '<li class="ml-4 list-disc mb-1">$1</li>')
+        .replace(/\n/g, '<br>');
   }
 }
