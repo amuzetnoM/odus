@@ -3,8 +3,10 @@ import { Component, inject, signal, effect, ElementRef, viewChild } from '@angul
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GeminiService } from '../services/gemini.service';
-import { ProjectService } from '../services/project.service';
+import { ProjectService, TaskStatus } from '../services/project.service';
 import { DriveService } from '../services/drive.service';
+import { AuthService } from '../services/auth.service';
+import { AppControlService, AppView } from '../services/app-control.service';
 import { Content } from '@google/genai';
 
 interface ChatMessage {
@@ -125,6 +127,8 @@ export class AiAgentComponent {
   geminiService = inject(GeminiService);
   projectService = inject(ProjectService);
   driveService = inject(DriveService);
+  authService = inject(AuthService);
+  appControlService = inject(AppControlService);
   
   isOpen = signal(false);
   messages = signal<ChatMessage[]>([]);
@@ -136,10 +140,20 @@ export class AiAgentComponent {
   private recognition: any;
 
   constructor() {
-      // Load History
+      // Load History or show personalized welcome
       const stored = localStorage.getItem('artifact_chat_history');
       if (stored) {
           try { this.messages.set(JSON.parse(stored)); } catch(e){}
+      } else {
+          // Personalization: First time welcome message
+          const userName = this.authService.currentUser().name.split(' ')[0];
+          this.messages.set([
+            {
+              role: 'model',
+              text: `Hello ${userName}. I'm ODUS, your project AI. How can I assist you today? You can ask me to create tasks, update their status, or navigate the app.`,
+              timestamp: new Date()
+            }
+          ]);
       }
       
       effect(() => {
@@ -189,8 +203,13 @@ export class AiAgentComponent {
       this.scrollToBottom();
 
       // Build Context
+      const userName = this.authService.currentUser().name;
       const context = JSON.stringify({
-          projects: this.projectService.projects(),
+          userName,
+          openTasks: this.projectService.allTasks()
+              .filter(t => t.status !== 'done')
+              .map(t => ({ id: t.id, title: t.title, project: t.projectTitle })),
+          projects: this.projectService.projects().map(p => ({ id: p.id, title: p.title })),
           files: this.driveService.files().map(f => ({ name: f.name, type: f.type, created: f.createdAt }))
       });
 
@@ -201,20 +220,10 @@ export class AiAgentComponent {
       }));
 
       try {
-          const result = await this.geminiService.chatWithAgent(text, context, history);
+          const result = await this.geminiService.chatWithAgent(text, context, history, userName);
           
-          if (result.toolCall && result.toolCall.type === 'create_note') {
-              // Execute Tool
-              const noteData = result.toolCall.data;
-              const blob = new Blob([noteData.content], { type: 'text/plain' });
-              const file = new File([blob], `${noteData.title}.txt`, { type: 'text/plain' });
-              this.driveService.addFile(file);
-              
-              this.messages.update(p => [...p, { 
-                  role: 'model', 
-                  text: `I've created the document "${noteData.title}" in your Vault.`, 
-                  timestamp: new Date() 
-              }]);
+          if (result.toolCall) {
+              this.handleToolCall(result.toolCall);
           } else {
               this.messages.update(p => [...p, { 
                   role: 'model', 
@@ -230,6 +239,53 @@ export class AiAgentComponent {
           this.isThinking.set(false);
           this.scrollToBottom();
       }
+  }
+  
+  private handleToolCall(toolCall: { type: string, data: any }) {
+      switch(toolCall.type) {
+          case 'create_note':
+              const noteData = toolCall.data;
+              const blob = new Blob([noteData.content], { type: 'text/plain' });
+              const file = new File([blob], `${noteData.title}.txt`, { type: 'text/plain' });
+              this.driveService.addFile(file);
+              this.addModelResponse(`I've created the document "${noteData.title}" in your Vault.`);
+              break;
+
+          case 'create_task':
+              const taskData = toolCall.data;
+              this.projectService.addTask(taskData.projectId || 'personal', {
+                  title: taskData.title,
+                  description: 'Created by ODUS AI',
+                  status: 'todo',
+                  priority: 'medium',
+                  inFocusList: !!taskData.addToFocus,
+                  focusIndex: taskData.addToFocus ? 0 : 999
+              });
+              this.addModelResponse(`OK. I've created the task: "${taskData.title}".`);
+              break;
+
+          case 'update_task_status':
+              const updateData = toolCall.data;
+              const taskToUpdate = this.projectService.findTaskByTitle(updateData.taskTitle);
+              if (taskToUpdate) {
+                  this.projectService.updateTaskStatus(taskToUpdate.projectId, taskToUpdate.task.id, updateData.newStatus as TaskStatus);
+                  this.addModelResponse(`Done. I've marked "${updateData.taskTitle}" as ${updateData.newStatus}.`);
+              } else {
+                  this.addModelResponse(`Sorry, I couldn't find a task named "${updateData.taskTitle}".`);
+              }
+              break;
+
+          case 'navigate':
+              const navData = toolCall.data;
+              this.appControlService.navigate(navData.view as AppView);
+              this.addModelResponse(`Navigating to ${navData.view}.`);
+              this.isOpen.set(false); // Close agent on navigation
+              break;
+      }
+  }
+  
+  private addModelResponse(text: string) {
+      this.messages.update(p => [...p, { role: 'model', text, timestamp: new Date() }]);
   }
 
   scrollToBottom() {

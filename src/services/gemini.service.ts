@@ -8,8 +8,8 @@ export interface AgentResponse {
   text: string;
   groundingMetadata?: any;
   toolCall?: {
-    type: 'create_note';
-    data: { title: string; content: string };
+    type: 'create_note' | 'create_task' | 'update_task_status' | 'navigate';
+    data: any; // Flexible data structure for different tools
   };
 }
 
@@ -457,23 +457,43 @@ export class GeminiService {
     return response.text ? JSON.parse(response.text) : null;
   }
 
-  async chatWithAgent(message: string, contextData: string, history: Content[]): Promise<AgentResponse> {
+  async chatWithAgent(message: string, contextData: string, history: Content[], userName: string): Promise<AgentResponse> {
     const model = 'gemini-2.5-flash';
     
     const systemInstruction = `
-      You are ARTIFACT, an advanced AI project manager. 
-      You have read-access to the user's current project state and file vault provided in the context.
+      You are ODUS, an advanced AI project manager. Your user's name is ${userName}. Be helpful, concise, and proactive.
+      You have read-access to the user's current project state, open tasks, and file vault provided in the context.
       
       Capabilities:
       1. Answer questions about the projects/files.
       2. Search the web for info (Use googleSearch).
-      3. Create Notes/Documents. To create a note, you MUST output a specific JSON structure (see below) INSTEAD of plain text.
+      3. Execute commands by outputting a specific JSON structure.
 
-      IF the user asks to create a note/file/document:
-      Return strictly this JSON: { "toolCall": { "type": "create_note", "data": { "title": "...", "content": "..." } } }
+      *** COMMANDS ***
+      To execute a command, you MUST output a 'toolCall' JSON object INSTEAD of plain text.
       
-      Otherwise, answer normally.
-      Current System Context:
+      1. Create a Task:
+         - User says: "create a new task to refactor the auth service and add it to focus"
+         - YOU RETURN: { "toolCall": { "type": "create_task", "data": { "title": "Refactor the auth service", "addToFocus": true, "projectId": "personal" } } }
+         - Note: If project is not specified, default to "personal". You can infer projectId from context if mentioned.
+
+      2. Update a Task's Status:
+         - User says: "mark 'Refactor auth service' as done"
+         - YOU RETURN: { "toolCall": { "type": "update_task_status", "data": { "taskTitle": "Refactor auth service", "newStatus": "done" } } }
+         - Note: Find the task by its title from the 'openTasks' in the context. Available statuses: 'todo', 'in-progress', 'done'.
+
+      3. Navigate the App:
+         - User says: "show me the calendar"
+         - YOU RETURN: { "toolCall": { "type": "navigate", "data": { "view": "calendar" } } }
+         - Available views: 'dashboard', 'calendar', 'drive', 'github', 'projects', 'mind'.
+      
+      4. Create a Note/Document:
+         - User says: "create a note about our next sprint goals"
+         - YOU RETURN: { "toolCall": { "type": "create_note", "data": { "title": "Next Sprint Goals", "content": "..." } } }
+
+      If the user is just chatting, answer normally. Do not use a toolCall.
+      
+      Current System Context (JSON):
       ${contextData}
     `;
 
@@ -493,7 +513,7 @@ export class GeminiService {
           try {
               const json = JSON.parse(text);
               if (json.toolCall) {
-                  return { text: 'Creating document...', toolCall: json.toolCall };
+                  return { text: 'Executing command...', toolCall: json.toolCall };
               }
           } catch (e) { }
       }

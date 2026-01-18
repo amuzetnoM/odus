@@ -296,4 +296,19 @@ export class ProjectService {
     
     this.notification.show('Project decommissioned', 'info');
   }
+
+  findTaskByTitle(title: string): { task: Task, projectId: string } | null {
+      const normalizedTitle = title.trim().toLowerCase();
+      for (const project of this.projectsState()) {
+          const found = project.tasks.find(t => t.title.toLowerCase() === normalizedTitle);
+          if (found) {
+              return { task: { ...found }, projectId: project.id };
+          }
+      }
+      const foundPersonal = this.personalTasksState().find(t => t.title.toLowerCase() === normalizedTitle);
+      if (foundPersonal) {
+          return { task: { ...foundPersonal }, projectId: 'personal' };
+      }
+      return null;
+  }
 }

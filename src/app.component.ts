@@ -1,8 +1,9 @@
 
-import { Component, inject, signal, HostListener } from '@angular/core';
+import { Component, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProjectService } from './services/project.service';
 import { DriveService } from './services/drive.service';
+import { AppControlService, AppView } from './services/app-control.service';
 import { ProjectBoardComponent } from './components/project-board.component';
 import { CreateProjectComponent } from './components/create-project.component';
 import { DashboardComponent } from './components/views/dashboard.component';
@@ -12,8 +13,6 @@ import { GithubViewComponent } from './components/views/github-view.component';
 import { MindBoardComponent } from './components/views/mind-board.component';
 import { AiAgentComponent } from './components/ai-agent.component';
 import { ToastComponent } from './components/ui/toast.component';
-
-type AppView = 'dashboard' | 'calendar' | 'drive' | 'github' | 'projects' | 'mind';
 
 @Component({
   selector: 'app-root',
@@ -218,10 +217,22 @@ type AppView = 'dashboard' | 'calendar' | 'drive' | 'github' | 'projects' | 'min
 export class AppComponent {
   projectService = inject(ProjectService);
   driveService = inject(DriveService);
+  appControlService = inject(AppControlService);
   
   showCreateModal = signal(false);
   currentView = signal<AppView>('dashboard');
   isDragging = signal(false);
+  
+  constructor() {
+    effect(() => {
+      const view = this.appControlService.navigationRequest();
+      if (view) {
+        this.currentView.set(view);
+        // Reset the signal to prevent re-triggering on other changes
+        this.appControlService.navigationRequest.set(null);
+      }
+    });
+  }
 
   isActive(id: string) { return this.projectService.activeProjectIds().includes(id); }
 
