@@ -1,0 +1,314 @@
+
+import { Component, inject, computed, signal, effect, ChangeDetectionStrategy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ProjectService, Task, TaskMetadata, Priority } from '../../services/project.service';
+import { DriveService } from '../../services/drive.service';
+import { GeminiService } from '../../services/gemini.service';
+
+@Component({
+  selector: 'app-dashboard',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <div class="h-full flex flex-col p-4 sm:p-8 overflow-y-auto custom-scrollbar">
+      <!-- Header with responsive wrapping and right-aligned input -->
+      <div class="mb-8 flex flex-wrap items-end gap-4">
+         <div class="min-w-[120px] mr-auto flex flex-col gap-1">
+            <h1 class="text-2xl font-extralight text-white tracking-widest mb-0">ODUS</h1>
+            <div class="flex items-center gap-2">
+               <p class="text-xs text-zinc-500 font-light tracking-wide uppercase">System Status: Nominal</p>
+               <button (click)="resetSystem()" class="text-[9px] text-red-900 hover:text-red-500 hover:bg-red-950/20 px-1 rounded transition-colors uppercase border border-transparent hover:border-red-900" title="Wipe all data">Reset</button>
+            </div>
+         </div>
+         
+         <!-- Smart Quick Add Form (Right Aligned) -->
+         <div class="flex items-center bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 focus-within:border-white/20 transition-colors max-w-full ml-auto">
+            <input 
+              [(ngModel)]="quickTaskTitle" 
+              (keydown.enter)="quickAdd()"
+              placeholder="" 
+              class="bg-transparent text-xs text-white focus:outline-none w-28 sm:w-40 transition-all"
+              [disabled]="isQuickAdding()"
+            />
+            <button (click)="quickAdd()" class="ml-2 w-5 h-5 flex items-center justify-center text-zinc-500 hover:text-white rounded hover:bg-white/10 transition-colors shrink-0" [disabled]="isQuickAdding()">
+              @if(isQuickAdding()) { <div class="w-3 h-3 border border-zinc-500 border-t-white rounded-full animate-spin"></div> } 
+              @else { + }
+            </button>
+         </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 min-h-0">
+         
+         <!-- Founder's Focus List -->
+         <div class="flex flex-col min-h-0 bg-zinc-900/10 border border-white/5 rounded-xl p-4 relative overflow-hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xs font-semibold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                   <span class="w-1 h-1 bg-white rounded-full"></span> Founder's Focus
+                </h2>
+                <button 
+                  (click)="curateFocusList()"
+                  [disabled]="isCurating()"
+                  class="text-[9px] uppercase tracking-wider text-zinc-400 hover:text-white border border-zinc-800 hover:bg-zinc-800 px-2 py-1 rounded transition-all flex items-center gap-1">
+                   @if(isCurating()) { <div class="w-2 h-2 border border-zinc-500 border-t-white rounded-full animate-spin"></div> }
+                   <span>Curate (AI)</span>
+                </button>
+            </div>
+            
+            <div 
+              class="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-2"
+              (dragover)="onDragOver($event)"
+              (drop)="onDrop($event)"
+            >
+               @for (task of focusTasks(); track task.id; let i = $index) {
+                  <div 
+                    draggable="true"
+                    (dragstart)="onDragStart($event, i)"
+                    class="group flex flex-col gap-2 p-3 rounded border border-white/5 bg-zinc-900/30 hover:bg-zinc-900/60 transition-all cursor-move relative"
+                    [class.border-l-2]="task.priority === 'high'"
+                    [class.border-l-red-500]="task.priority === 'high'"
+                  >
+                     <div class="flex items-center gap-4">
+                        <div class="flex-1 min-w-0">
+                           <input 
+                             [ngModel]="task.title" 
+                             (blur)="updateTitle(task, $event)"
+                             class="w-full bg-transparent text-sm text-zinc-300 font-light focus:outline-none focus:text-white"
+                           />
+                           <div class="flex gap-2 items-center mt-1">
+                              <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider bg-zinc-950 px-1 rounded">{{ task.projectTitle }}</span>
+                              
+                              <!-- Priority Toggle -->
+                              <button 
+                                (click)="cyclePriority(task)"
+                                class="text-[9px] uppercase tracking-wider px-1 rounded border transition-colors flex items-center gap-1"
+                                [class.border-red-900]="task.priority === 'high'"
+                                [class.text-red-400]="task.priority === 'high'"
+                                [class.bg-red-900_20]="task.priority === 'high'"
+                                [class.border-zinc-700]="task.priority === 'medium'"
+                                [class.text-zinc-400]="task.priority === 'medium'"
+                                [class.border-zinc-800]="task.priority === 'low'"
+                                [class.text-zinc-600]="task.priority === 'low'"
+                              >
+                                {{ task.priority }}
+                              </button>
+                           </div>
+                        </div>
+                        <button (click)="toggleExpand(task.id)" class="text-zinc-600 hover:text-white text-[10px] uppercase">
+                            {{ isExpanded(task.id) ? 'Less' : 'Meta' }}
+                        </button>
+                        <button (click)="toggleFocus(task)" class="text-zinc-600 hover:text-red-400 text-[10px]" title="Remove from Focus">×</button>
+                     </div>
+                     
+                     <!-- Metadata (Expanded) -->
+                     @if (isExpanded(task.id)) {
+                        <div class="pl-0 pt-2 border-t border-white/5 grid grid-cols-2 gap-2 animate-fade-in">
+                            <div class="col-span-2">
+                                <label class="text-[9px] text-zinc-600 block mb-1">Project Assignment (Move)</label>
+                                <select 
+                                   [ngModel]="task.projectId" 
+                                   (change)="moveTaskProject(task, $event)"
+                                   class="w-full bg-zinc-950/50 border border-zinc-800 rounded px-2 py-1 text-[10px] text-zinc-300 focus:outline-none focus:border-zinc-600">
+                                   <option value="personal">Personal / General</option>
+                                   @for (proj of projectService.projects(); track proj.id) {
+                                      <option [value]="proj.id">{{ proj.title }}</option>
+                                   }
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[9px] text-zinc-600 block">Notes</label>
+                                <input 
+                                  [ngModel]="task.metadata?.notes" 
+                                  (change)="updateMeta(task, 'notes', $event)"
+                                  class="w-full bg-zinc-950/50 border border-zinc-800 rounded px-2 py-1 text-[10px] text-zinc-400 focus:outline-none focus:border-zinc-600" 
+                                  placeholder="Add notes..."
+                                />
+                            </div>
+                             <div>
+                                <label class="text-[9px] text-zinc-600 block">Due</label>
+                                <input 
+                                  type="date"
+                                  [ngModel]="task.metadata?.dueDate" 
+                                  (change)="updateMeta(task, 'dueDate', $event)"
+                                  class="w-full bg-zinc-950/50 border border-zinc-800 rounded px-2 py-1 text-[10px] text-zinc-400 focus:outline-none focus:border-zinc-600" 
+                                />
+                            </div>
+                        </div>
+                     }
+                  </div>
+               } @empty {
+                  <div class="p-8 border border-dashed border-zinc-800 rounded text-center text-zinc-600 font-light text-sm">
+                     Focus list clear. <br/> <span class="text-[10px]">Use "Curate" or add tasks manually.</span>
+                  </div>
+               }
+            </div>
+         </div>
+
+         <!-- Recent Files -->
+         <div class="flex flex-col min-h-0">
+            <h2 class="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+               <span class="w-1 h-1 bg-zinc-600 rounded-full"></span> Recent Data
+            </h2>
+            <div class="flex-1 overflow-y-auto custom-scrollbar space-y-1 pr-2">
+               @for (file of recentFiles(); track file.id) {
+                  <div class="flex items-center gap-3 p-3 rounded border border-transparent hover:border-white/5 hover:bg-zinc-900/30 transition-colors">
+                     <div class="w-8 h-8 rounded bg-zinc-800/50 flex items-center justify-center text-[10px] font-bold text-zinc-400 border border-white/5">
+                        {{ file.type }}
+                     </div>
+                     <div class="flex-1 min-w-0">
+                        <div class="text-sm text-zinc-300 font-light truncate">{{ file.name }}</div>
+                        <div class="text-[10px] text-zinc-600">{{ file.sizeStr }} • {{ file.createdAt | date:'shortDate' }}</div>
+                     </div>
+                  </div>
+               } @empty {
+                  <div class="p-8 border border-dashed border-zinc-800 rounded text-center text-zinc-600 font-light text-sm">
+                     No data stored.
+                  </div>
+               }
+            </div>
+         </div>
+      </div>
+    </div>
+  `,
+  styles: [`
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .animate-fade-in { animation: fadeIn 0.2s ease-out; }
+  `]
+})
+export class DashboardComponent {
+  projectService = inject(ProjectService);
+  driveService = inject(DriveService);
+  geminiService = inject(GeminiService);
+  
+  quickTaskTitle = signal('');
+  expandedTasks = signal<string[]>([]);
+  isCurating = signal(false);
+  isQuickAdding = signal(false);
+  
+  draggedTaskIndex = -1;
+
+  focusTasks = computed(() => {
+    return this.projectService.allTasks()
+      .filter((t: any) => t.inFocusList)
+      .sort((a: any, b: any) => (a.focusIndex ?? 9999) - (b.focusIndex ?? 9999));
+  });
+
+  recentFiles = computed(() => {
+      return [...this.driveService.files()].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 10);
+  });
+
+  resetSystem() {
+      if(confirm('FACTORY RESET: This will wipe all projects and local data. Continue?')) {
+          this.projectService.hardReset();
+      }
+  }
+
+  async quickAdd() {
+      const title = this.quickTaskTitle().trim();
+      if (!title) return;
+      
+      this.isQuickAdding.set(true);
+      
+      const targetProjectId = await this.geminiService.routeTaskToProject(title, this.projectService.projects());
+      
+      this.projectService.addTask(targetProjectId, {
+          title: title,
+          description: 'Added via Dashboard Smart Add',
+          status: 'todo',
+          priority: 'medium',
+          tags: ['QUICK'],
+          inFocusList: true,
+          focusIndex: 0
+      });
+      
+      this.quickTaskTitle.set('');
+      this.isQuickAdding.set(false);
+  }
+
+  async curateFocusList() {
+      this.isCurating.set(true);
+      const allTasks = this.projectService.allTasks();
+      const result = await this.geminiService.curateFocusList(allTasks);
+      
+      allTasks.forEach((t: any) => {
+          if (t.inFocusList) this.projectService.updateTask(t.projectId, t.id, { inFocusList: false });
+      });
+
+      result.taskIds.forEach((id, index) => {
+          const taskObj = allTasks.find((t: any) => t.id === id);
+          if (taskObj) {
+              this.projectService.updateTask(taskObj.projectId, id, { 
+                  inFocusList: true, 
+                  focusIndex: index,
+                  priority: 'high' 
+              });
+          }
+      });
+      this.isCurating.set(false);
+  }
+
+  updateTitle(task: any, event: any) {
+      this.projectService.updateTask(task.projectId, task.id, { title: event.target.value });
+  }
+
+  toggleExpand(id: string) {
+      this.expandedTasks.update(prev => 
+          prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
+      );
+  }
+
+  isExpanded(id: string) { return this.expandedTasks().includes(id); }
+
+  updateMeta(task: any, field: keyof TaskMetadata, event: any) {
+      const val = event.target.value;
+      const currentMeta = task.metadata || {};
+      this.projectService.updateTask(task.projectId, task.id, { 
+          metadata: { ...currentMeta, [field]: val } 
+      });
+  }
+
+  cyclePriority(task: any) {
+      const map: Record<Priority, Priority> = {
+          'low': 'medium',
+          'medium': 'high',
+          'high': 'low'
+      };
+      const next = map[task.priority];
+      this.projectService.updateTask(task.projectId, task.id, { priority: next });
+  }
+
+  moveTaskProject(task: any, event: any) {
+      const newProjectId = event.target.value;
+      this.projectService.moveTask(task.id, task.projectId, newProjectId);
+  }
+
+  toggleFocus(task: any) {
+      this.projectService.updateTask(task.projectId, task.id, { inFocusList: !task.inFocusList });
+  }
+
+  onDragStart(e: DragEvent, index: number) {
+      this.draggedTaskIndex = index;
+      e.dataTransfer!.effectAllowed = 'move';
+  }
+
+  onDragOver(e: DragEvent) {
+      e.preventDefault();
+      e.dataTransfer!.dropEffect = 'move';
+  }
+
+  onDrop(e: DragEvent) {
+      e.preventDefault();
+      const tasks = this.focusTasks();
+      if (this.draggedTaskIndex > -1 && this.draggedTaskIndex < tasks.length) {
+          const task = tasks[this.draggedTaskIndex];
+          this.projectService.updateTask((task as any).projectId, task.id, { focusIndex: -1 });
+          setTimeout(() => {
+              const reordered = this.focusTasks();
+              reordered.forEach((t: any, idx: number) => {
+                  this.projectService.updateTask(t.projectId, t.id, { focusIndex: idx });
+              });
+          }, 100);
+      }
+  }
+}
