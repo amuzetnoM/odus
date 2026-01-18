@@ -34,7 +34,7 @@ interface ChatMessage {
 
     <!-- Chat Interface -->
     @if (isOpen()) {
-      <div class="fixed bottom-24 right-6 w-[90vw] sm:w-[400px] h-[60vh] sm:h-[600px] bg-zinc-950/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden z-40 animate-scale-in origin-bottom-right">
+      <div class="fixed bottom-24 right-6 left-6 sm:left-auto sm:w-[400px] h-[60vh] sm:h-[600px] bg-zinc-950/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden z-40 animate-scale-in origin-bottom-right">
         
         <!-- Header -->
         <div class="p-4 border-b border-white/5 bg-zinc-900/50 flex justify-between items-center">
