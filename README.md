@@ -10,7 +10,7 @@
 
 </div>
 
-**ODUS** is a comprehensive, AI-native project management suite that reimagines how teams plan, execute, and visualize work. Built with a zoneless Angular architecture and powered by a provider-agnostic AI core (default: Google Gemini 2.0), ODUS generates project structures, detects dependencies, and provides intelligent insights—all while keeping your data local-first.
+**ODUS** is a comprehensive, AI-native project management suite that reimagines how teams plan, execute, and visualize work. Built with a zoneless Angular architecture and powered by a provider-agnostic AI core, ODUS generates project structures, detects dependencies, and provides intelligent insights—all while keeping data local-first.
 
 ---
 
