@@ -330,16 +330,31 @@ export class MindBoardComponent {
   }
 
   parseMarkdown(text: string): string {
-      // Very basic parser for the "Preview" mode
+      if (!text) return '';
+      
       let html = text
-          .replace(/^# (.*$)/gim, '<h1 class="text-2xl sm:text-3xl font-light text-white mb-4 border-b border-white/10 pb-2">$1</h1>')
-          .replace(/^## (.*$)/gim, '<h2 class="text-xl sm:text-2xl font-light text-white mb-3 mt-6">$1</h2>')
+          // Headers (process from most specific to least)
           .replace(/^### (.*$)/gim, '<h3 class="text-lg sm:text-xl font-medium text-white mb-2 mt-4">$1</h3>')
-          .replace(/\*\*(.*)\*\*/gim, '<strong class="text-white font-bold">$1</strong>')
-          .replace(/_(.*)_/gim, '<em class="text-zinc-400 italic">$1</em>')
-          .replace(/`(.*)`/gim, '<code class="bg-zinc-800 text-zinc-300 px-1 rounded font-mono text-sm">$1</code>')
-          .replace(/^\- (.*$)/gim, '<li class="ml-4 list-disc text-zinc-300 mb-1">$1</li>')
-          .replace(/\n/gim, '<br />');
+          .replace(/^## (.*$)/gim, '<h2 class="text-xl sm:text-2xl font-light text-white mb-3 mt-6">$1</h2>')
+          .replace(/^# (.*$)/gim, '<h1 class="text-2xl sm:text-3xl font-light text-white mb-4 mt-6 border-b border-white/10 pb-2">$1</h1>')
+          // Bold and Italic (non-greedy)
+          .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>')
+          .replace(/\*(.*?)\*/g, '<em class="text-zinc-400 italic">$1</em>')
+          .replace(/_(.*?)_/g, '<em class="text-zinc-400 italic">$1</em>')
+          // Code
+          .replace(/`(.*?)`/g, '<code class="bg-zinc-800 text-zinc-300 px-1 rounded font-mono text-sm">$1</code>')
+          // Lists
+          .replace(/^\s*[-*+] (.*$)/gim, '<li class="ml-4 list-disc text-zinc-300 mb-1">$1</li>')
+          .replace(/^\s*\d+\. (.*$)/gim, '<li class="ml-4 list-decimal text-zinc-300 mb-1">$1</li>')
+          // Paragraphs and line breaks
+          .replace(/\n\n/g, '</p><p class="mb-3">')
+          .replace(/\n/g, '<br />');
+      
+      // Wrap in paragraph if not already wrapped
+      if (!html.startsWith('<')) {
+          html = '<p class="mb-3">' + html + '</p>';
+      }
+          
       return html;
   }
 

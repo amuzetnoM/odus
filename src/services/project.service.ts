@@ -4,6 +4,7 @@ import { NotificationService } from './notification.service';
 import { PersistenceService } from './persistence.service';
 import { AuthService } from './auth.service';
 import { GeminiService } from './gemini.service';
+import { normalizeDate } from '../utils/date-utils';
 
 export type TaskStatus = 'todo' | 'in-progress' | 'done';
 export type Priority = 'low' | 'medium' | 'high';
@@ -21,6 +22,10 @@ export interface TaskMetadata {
   location?: string;
   notes?: string;
   dueDate?: string;
+  mindNodeId?: string;
+  githubIssueNumber?: number;
+  githubRepo?: string;
+  recurringTaskId?: string;
 }
 
 export interface Task {
@@ -148,6 +153,7 @@ export class ProjectService {
    * - Strips markdown-like tokens from titles
    * - Moves overflow / trailing content from long titles into description
    * - Truncates long titles to a sensible limit
+   * - Validates and normalizes dates
    */
   private normalizeTask(input: Partial<Task>): Partial<Task> {
       const out: Partial<Task> = { ...input };
@@ -197,6 +203,19 @@ export class ProjectService {
 
       out.title = title || 'Untitled Task';
       out.description = description || out.description || '';
+      
+      // Validate and normalize dates using shared utility
+      out.startDate = normalizeDate(out.startDate);
+      out.endDate = normalizeDate(out.endDate);
+      
+      // Ensure endDate >= startDate
+      if (out.startDate && out.endDate && out.endDate < out.startDate) {
+          // Swap them or set endDate to startDate + 1 day
+          const start = new Date(out.startDate);
+          const end = new Date(start);
+          end.setDate(start.getDate() + 1);
+          out.endDate = end.toISOString().split('T')[0];
+      }
 
       return out;
   }

@@ -34,6 +34,15 @@ const TASK_DURATION = {
   MAX_RANDOM: 6    // Maximum random duration
 } as const;
 
+export interface RepoAnalysisContext {
+  language?: string;
+  stars?: number;
+  pyproject?: string | null;
+  cargoToml?: string | null;
+  goMod?: string | null;
+  filesByType?: Record<string, string[]>;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -399,13 +408,40 @@ export class GeminiService {
 
   async getDailyBriefing(dayTasks: any, metrics: any): Promise<DayBriefing> {
     const prompt = `
-      Analyze workload.
-      Metrics: ${JSON.stringify(metrics)}
-      Today: ${JSON.stringify(dayTasks)}
+      Analyze today's workload and provide a structured briefing.
       
-      Return JSON: { "briefing": "string", "dayType": "FOCUS" | "CRUNCH" | "BALANCED" | "LIGHT" | "REST" }
+      Workspace Metrics: ${JSON.stringify(metrics)}
+      Today's Tasks:
+      - Starting: ${dayTasks.starting?.length || 0} tasks
+      - Due: ${dayTasks.due?.length || 0} tasks  
+      - Ongoing: ${dayTasks.ongoing?.length || 0} tasks
+      
+      Tasks Detail: ${JSON.stringify(dayTasks)}
+      
+      Provide a clear, structured briefing with:
+      1. A concise overview sentence
+      2. Key priorities for the day (if any high-priority tasks)
+      3. A brief recommendation or insight
+      
+      Format the briefing using **Markdown** formatting:
+      - Use **bold** for emphasis on important items
+      - Use bullet points for lists of priorities
+      - Use inline code formatting for specific task names or technical terms
+      - Structure with proper paragraphs (2-4 sentences total)
+      - Be professional and actionable
+      
+      Example: "**Today's Focus**: You have 3 tasks starting, including **API Integration**. Priority is on completing user-auth module. Recommend tackling high-priority items first."
+      
+      Return JSON: { "briefing": "string (markdown formatted)", "dayType": "FOCUS" | "CRUNCH" | "BALANCED" | "LIGHT" | "REST" }
+      
+      dayType definitions:
+      - FOCUS: 1-3 high-priority tasks, manageable workload
+      - CRUNCH: 4+ tasks or multiple high-priority items
+      - BALANCED: Mix of priorities, moderate load
+      - LIGHT: Few tasks, mostly low priority
+      - REST: No tasks or all completed
     `;
-    const system = "You are an executive assistant. Be concise.";
+    const system = "You are an executive assistant providing daily briefings. Be clear, concise, and actionable.";
     
     try {
         const text = await this.generateText(prompt, system, this.provider === 'gemini' ? {
@@ -418,7 +454,7 @@ export class GeminiService {
         
         return JSON.parse(this.cleanJson(text));
     } catch (e) {
-        return { briefing: "Unable to analyze schedule.", dayType: "BALANCED" };
+        return { briefing: "Unable to analyze schedule at this time.", dayType: "BALANCED" };
     }
   }
 
@@ -464,7 +500,14 @@ export class GeminiService {
   }
 
   async suggestNextTask(currentTasks: any[]): Promise<any> {
-      const prompt = `Tasks: ${JSON.stringify(currentTasks.map(t => t.title))}. Suggest 1 missing task. JSON: { "title": "", "description": "", "priority": "medium", "tags": [] }`;
+      const prompt = `Tasks: ${JSON.stringify(currentTasks.map(t => t.title))}. Suggest 1 missing task. 
+      
+      FORMAT DESCRIPTION IN MARKDOWN:
+      - Use **bold** for key concepts
+      - Use inline code formatting for technical terms
+      - Use bullet points for steps or requirements
+      
+      JSON: { "title": "", "description": "markdown formatted string", "priority": "medium", "tags": [] }`;
       try {
           const text = await this.generateText(prompt, "Project Assistant.", this.provider === 'gemini' ? {
               type: Type.OBJECT, properties: { 
@@ -480,10 +523,14 @@ export class GeminiService {
 
   // --- Complex Methods (Repo Analysis & Chat) ---
 
-  async analyzeRepoAndPlan(repoName: string, fileStructure: string, commitHistory: string, readme: string | null, packageJson: string | null): Promise<Task[]> {
-      const prompt = `Analyze Repository: "${repoName}"
+  async analyzeRepoAndPlan(repoName: string, fileStructure: string, commitHistory: string, readme: string | null, packageJson: string | null, additionalContext?: RepoAnalysisContext): Promise<Task[]> {
+      const languageInfo = additionalContext?.language ? `\nPrimary Language: ${additionalContext.language}` : '';
+      const projectConfig = additionalContext?.pyproject || additionalContext?.cargoToml || additionalContext?.goMod || '';
+      const popularityInfo = additionalContext?.stars ? `\nRepository Stars: ${additionalContext.stars}` : '';
+      
+      const prompt = `Analyze Repository: "${repoName}"${languageInfo}${popularityInfo}
 
-FILE STRUCTURE:
+FILE STRUCTURE (Categorized):
 ${fileStructure}
 
 RECENT COMMITS:
@@ -495,29 +542,53 @@ ${readme || 'No README found'}
 PACKAGE.JSON:
 ${packageJson || 'No package.json found'}
 
-TASK: Create a comprehensive project plan with task dependencies.
+${projectConfig ? `ADDITIONAL CONFIG:\n${projectConfig.substring(0, 1000)}` : ''}
+
+TASK: Create a comprehensive, detailed project plan with proper task dependencies and rich descriptions.
 
 CRITICAL REQUIREMENTS:
-1. Generate 8-15 granular, actionable tasks
-2. PRIORITY DISTRIBUTION (MANDATORY):
+1. Generate 8-15 granular, actionable tasks based on the actual codebase analysis
+2. Use the file structure to inform task breakdown (e.g., separate tasks for different modules/components)
+3. Use commit history to identify recent work and suggest next steps
+4. Extract technical details from package.json/configs to create specific tasks
+
+5. PRIORITY DISTRIBUTION (MANDATORY):
    - Exactly 20-30% tasks must be "high" priority (critical path items like architecture, core features, blockers)
    - Exactly 50-60% tasks must be "medium" priority (standard features, improvements)
    - Exactly 20-30% tasks must be "low" priority (polish, documentation, nice-to-haves)
-3. DEPENDENCIES (MANDATORY):
+
+6. DEPENDENCIES (MANDATORY):
    - Each task MUST have a "dependsOn" array with 0-3 task indices (use array index, 0-based)
    - Create logical dependency chains: setup → implementation → testing → deployment
    - Example: Task 3 depends on tasks 0 and 1: "dependsOn": [0, 1]
-4. SCHEDULING:
+
+7. RICH DESCRIPTIONS (MARKDOWN FORMATTED):
+   - Each task description MUST be formatted in Markdown
+   - Use **bold** for key terms and important concepts
+   - Use bullet points (- item) for lists
+   - Use inline code formatting for technical terms, file names, functions
+   - Include technical context from the codebase
+   - Reference specific files or modules when relevant
+   - Describe WHY the task is important, not just WHAT
+   - Example: "Implement **user authentication** system using JWT tokens. Key files: auth.service.ts, user.model.ts. Critical for securing API endpoints."
+
+8. SCHEDULING:
    - Assign realistic durationDays (2-14 days based on complexity)
    - startDayOffset should account for dependencies (dependent tasks start after prerequisites)
-5. TAGS: Use 2-4 letter codes like 'ARCH', 'FEAT', 'TEST', 'DOCS', 'BUG', 'OPS', 'UI/UX'
+
+9. TAGS: Use relevant codes based on the repository:
+   - For code: 'ARCH', 'FEAT', 'REFAC', 'PERF'
+   - For testing: 'TEST', 'QA', 'E2E'
+   - For ops: 'DOCS', 'OPS', 'CI/CD', 'SEC'
+   - For fixes: 'BUG', 'FIX', 'HOTFIX'
+   - Tech-specific: 'UI/UX', 'API', 'DB', 'AUTH'
 
 Return ONLY valid JSON matching this structure:
 {
   "tasks": [
     {
-      "title": "string",
-      "description": "string",
+      "title": "string (60 chars max, descriptive)",
+      "description": "string (detailed, 50-200 chars with context)",
       "priority": "high|medium|low",
       "status": "todo",
       "tags": ["string"],
@@ -655,12 +726,18 @@ Return ONLY valid JSON matching this structure:
         Available Tools:
         - create_project: {"title": "...", "description": "..."}
         - delete_project: {"projectId": "..."}
-        - create_task: {"projectId": "...", "title": "...", "addToFocus": boolean}
+        - create_task: {"projectId": "...", "title": "...", "description": "...", "priority": "low|medium|high", "addToFocus": boolean}
         - delete_task: {"projectId": "...", "taskId": "..."}
-        - update_task_status: {"projectId": "...", "taskId": "...", "status": "todo|in-progress|done"}
-        - create_file: {"name": "...", "content": "...", "type": "csv|markdown"}
+        - update_task_status: {"taskTitle": "...", "newStatus": "todo|in-progress|done"}
+        - update_task: {"projectId": "...", "taskId": "...", "updates": {"title"?: "...", "description"?: "...", "priority"?: "...", "startDate"?: "...", "endDate"?: "..."}}
+        - curate_focus_list: {} - AI will analyze all tasks and select the top 5 most important ones for the focus list
+        - add_task_to_focus: {"taskId": "...", "projectId": "..."}
+        - remove_task_from_focus: {"taskId": "...", "projectId": "..."}
+        - create_file: {"filename": "...", "content": "...", "mimeType": "text/csv|text/markdown"}
         - navigate: {"view": "dashboard|projects|mind|drive|github|calendar"}
         - create_mind_node: {"content": "...", "tags": []}
+        - link_task_to_mind_node: {"taskId": "...", "projectId": "...", "nodeId": "..."} - Creates a connection between a task and a mind map node
+        - analyze_repository: {"owner": "...", "repo": "..."} - Analyzes a GitHub repository and creates a project
         
         INTELLIGENCE:
         - Reference the unified workspace context to understand relationships
@@ -670,6 +747,14 @@ Return ONLY valid JSON matching this structure:
         - Use metrics to gauge project health
         
         Be conversational, helpful, and leverage the full workspace context to provide intelligent assistance.
+        
+        RESPONSE FORMATTING:
+        - Use **Markdown** formatting in all responses
+        - Use **bold** for emphasis on key points
+        - Use bullet points (- item) for lists
+        - Use inline code formatting for technical terms, file names, commands
+        - Use code blocks for longer code snippets
+        - Structure responses with proper paragraphs for readability
       `;
 
       // 1. Google Gemini (Native Chat)

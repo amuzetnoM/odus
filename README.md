@@ -14,34 +14,45 @@
 
 ---
 
-## 🚀 Key Features
+## Key Features
 
-### 🧠 **Generative AI Core**
+### Generative AI Core
 - **One-Prompt Projects**: Describe your goal, get a complete project board with tasks, dependencies, and scheduling
 - **GitHub Intelligence**: Import repositories and auto-generate project plans from code analysis
-- **AI Agent**: Conversational interface with physics-based floating UI—create tasks, files, and navigate by voice
+- **AI Agent**: Conversational interface with physics-based floating UI - create tasks, files, and navigate by voice
 
-### 📊 **Smart Visualizations**
+### Smart Visualizations
 - **Success Roadmap**: D3.js-powered critical path visualization with temporal flow
 - **Dependency Graphs**: Interactive force-directed graphs showing task relationships
 - **Gantt Charts**: Timeline views with automatic conflict detection
 - **Mind Board**: Neural knowledge graph with AI-powered semantic linking
+- **Analytics Dashboard**: Burndown charts, velocity tracking, completion rate trends
 
-### 🎯 **Intelligent Task Management**
-- **Auto-Dependency Generation**: AI creates logical task chains (setup → implementation → testing)
+### Intelligent Task Management
+- **Auto-Dependency Generation**: AI creates logical task chains (setup to implementation to testing)
 - **Priority Distribution**: Enforced 20-35% high, 45-65% medium, 15-30% low priority tasks
 - **Smart Routing**: Natural language task input automatically sorted to correct projects
 - **Focus Curation**: AI selects your top 5 most impactful tasks daily
+- **Time Tracking**: Built-in timer with session logs and velocity metrics
+- **Recurring Tasks**: Daily, weekly, and monthly task automation
+- **Task Automation**: Rules engine for trigger-condition-action workflows
 
-### 🔐 **Local-First Architecture**
-- **IndexedDB Storage**: All data persists locally—zero server dependencies
+### Advanced Features
+- **Template Library**: 6 pre-built project templates (SaaS Launch, Mobile App, Marketing, etc.)
+- **File Preview**: View PDF, images, and text files in-app
+- **Predictive AI**: Risk detection, smart scheduling, and bottleneck identification
+- **GitHub Bi-Sync**: Push task updates back to GitHub issues
+- **GitHub Projects**: Integrate with GitHub Projects boards
+
+### Local-First Architecture
+- **IndexedDB Storage**: All data persists locally - zero server dependencies
 - **Privacy-First**: API keys never leave your browser
 - **Offline Capable**: Full functionality without internet (after initial load)
 - **Zoneless Design**: Angular Signals for reactive state without Zone.js overhead
 
 ---
 
-## 📦 Quick Start
+## Quick Start
 
 ### Prerequisites
 - **Node.js** 18+ ([Download](https://nodejs.org/))
@@ -71,7 +82,7 @@ Application runs at **http://localhost:3000**
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 Comprehensive documentation is available in the `/docs` directory:
 
@@ -84,7 +95,7 @@ Comprehensive documentation is available in the `/docs` directory:
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -99,7 +110,7 @@ Comprehensive documentation is available in the `/docs` directory:
 
 ---
 
-## 🎨 Core Modules
+## Core Modules
 
 ### 1. Dashboard (Scope)
 Command center with Focus List and Success Roadmap visualization. Smart Quick Add routes tasks via AI.
@@ -124,7 +135,7 @@ Floating, physics-driven conversational interface with tool calling for autonomo
 
 ---
 
-## 🚢 Deployment
+## Deployment
 
 ### Production Build
 ```bash
@@ -144,7 +155,7 @@ See **[Deployment Guide](./docs/deployment.md)** for detailed instructions.
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Please see our contributing guidelines:
 
@@ -162,7 +173,7 @@ We welcome contributions! Please see our contributing guidelines:
 
 ---
 
-## 🐛 Issues & Support
+## Issues & Support
 
 - **Bug Reports**: [GitHub Issues](https://github.com/amuzetnoM/ODUS/issues)
 - **Feature Requests**: [GitHub Discussions](https://github.com/amuzetnoM/ODUS/discussions)
@@ -170,13 +181,13 @@ We welcome contributions! Please see our contributing guidelines:
 
 ---
 
-## 📄 License
+## License
 
 MIT License - see [LICENSE](./LICENSE) file for details.
 
 ---
 
-## 🔗 Links
+## Links
 
 - **Live Demo**: [Coming Soon]
 - **Landing Page**: [landing.html](./landing.html) (Standalone GitHub Pages ready)
@@ -185,24 +196,34 @@ MIT License - see [LICENSE](./LICENSE) file for details.
 
 ---
 
-## 🎯 Roadmap
+## Roadmap
 
 ### Version 1.4 (Current)
-- ✅ Unified workspace context service
-- ✅ AI memory persistence
-- ✅ Enhanced dependency generation
-- ✅ Cross-view relationship detection
+- Unified workspace context service
+- AI memory persistence
+- Enhanced dependency generation
+- Cross-view relationship detection
+- Time tracking with timer and velocity metrics
+- Template library with 6 pre-built templates
+- Recurring tasks (daily/weekly/monthly)
+- Task automation via rules engine
+- File preview for PDF/images/text
+- Advanced analytics dashboard
+- Predictive AI for risk detection
+- GitHub bi-directional sync
+- GitHub Projects integration
 
 ### Version 1.5 (Planned)
-- [ ] Multi-user collaboration (WebRTC)
-- [ ] Export to PDF/CSV
-- [ ] Custom AI model support (Ollama, Claude)
-- [ ] Mobile app (Capacitor)
-- [ ] Plugin system
+- Multi-user collaboration (WebRTC)
+- Voice input for task creation
+- Semantic search across workspace
+- Custom AI model support (Ollama, Claude)
+- Mobile app (Capacitor)
+- Plugin system
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **Google Gemini** for powerful AI capabilities
 - **Angular Team** for zoneless architecture
@@ -213,7 +234,7 @@ MIT License - see [LICENSE](./LICENSE) file for details.
 
 <div align="center">
 
-**Made with 💜 by the ODUS Team**
+**Made with care by the ODUS Team**
 
 [Website](https://amuzetnoM.github.io/ODUS/landing.html) • [GitHub](https://github.com/amuzetnoM/ODUS) • [Documentation](./docs)
 

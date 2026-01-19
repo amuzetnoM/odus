@@ -630,9 +630,9 @@ export class AiAgentComponent implements AfterViewInit, OnDestroy {
               const taskData = toolCall.data;
               this.projectService.addTask(taskData.projectId || 'personal', {
                   title: taskData.title,
-                  description: 'Created by ODUS AI',
+                  description: taskData.description || 'Created by ODUS AI',
                   status: 'todo',
-                  priority: 'medium',
+                  priority: taskData.priority || 'medium',
                   inFocusList: !!taskData.addToFocus,
                   focusIndex: taskData.addToFocus ? 0 : 999
               });
@@ -658,6 +658,93 @@ export class AiAgentComponent implements AfterViewInit, OnDestroy {
                   this.addModelResponse(`Done. Marked "${updateData.taskTitle}" as ${updateData.newStatus}.`);
               } else {
                   this.addModelResponse(`Could not locate task "${updateData.taskTitle}".`);
+              }
+              break;
+          
+          case 'update_task':
+              const updateTaskData = toolCall.data;
+              this.projectService.updateTask(updateTaskData.projectId, updateTaskData.taskId, updateTaskData.updates);
+              this.addModelResponse(`Task updated successfully.`);
+              break;
+          
+          // --- Focus List Management ---
+          case 'curate_focus_list':
+              try {
+                  const allTasks = this.projectService.allTasks();
+                  const result = await this.geminiService.curateFocusList(allTasks);
+                  
+                  // Clear existing focus list
+                  allTasks.forEach((t: any) => {
+                      this.projectService.updateTask(t.projectId, t.id, { inFocusList: false });
+                  });
+                  
+                  // Set new focus list
+                  result.taskIds.forEach((taskId: string, index: number) => {
+                      const task = allTasks.find((t: any) => t.id === taskId);
+                      if (task) {
+                          this.projectService.updateTask((task as any).projectId, taskId, { 
+                              inFocusList: true, 
+                              focusIndex: index 
+                          });
+                      }
+                  });
+                  
+                  this.messages.update(p => [...p, {
+                      role: 'model',
+                      text: `Focus list curated: ${result.taskIds.length} tasks selected. ${result.reasoning}`,
+                      uiType: 'success-card',
+                      uiData: { title: 'Focus List Updated', message: result.reasoning },
+                      timestamp: new Date()
+                  }]);
+              } catch (e) {
+                  this.addModelResponse('Failed to curate focus list.');
+              }
+              break;
+          
+          case 'add_task_to_focus':
+              const addFocusData = toolCall.data;
+              this.projectService.updateTask(addFocusData.projectId, addFocusData.taskId, { 
+                  inFocusList: true,
+                  focusIndex: 0
+              });
+              this.addModelResponse('Task added to focus list.');
+              break;
+          
+          case 'remove_task_from_focus':
+              const removeFocusData = toolCall.data;
+              this.projectService.updateTask(removeFocusData.projectId, removeFocusData.taskId, { 
+                  inFocusList: false 
+              });
+              this.addModelResponse('Task removed from focus list.');
+              break;
+          
+          // --- Mind Map Integration ---
+          case 'link_task_to_mind_node':
+              const linkData = toolCall.data;
+              try {
+                  // Add task reference to mind node properties
+                  const node = this.mindService.nodes().find(n => n.id === linkData.nodeId);
+                  if (node) {
+                      const taskRefs = node.properties?.taskReferences || '';
+                      const newRefs = taskRefs ? `${taskRefs},${linkData.taskId}` : linkData.taskId;
+                      this.mindService.updateNode(linkData.nodeId, {
+                          properties: { ...node.properties, taskReferences: newRefs }
+                      });
+                      
+                      // Also add mind node reference to task metadata
+                      this.projectService.updateTask(linkData.projectId, linkData.taskId, {
+                          metadata: { 
+                              mindNodeId: linkData.nodeId,
+                              notes: `Linked to mind map node: ${node.title}`
+                          }
+                      });
+                      
+                      this.addModelResponse(`Linked task to mind map node "${node.title}".`);
+                  } else {
+                      this.addModelResponse('Mind node not found.');
+                  }
+              } catch (e) {
+                  this.addModelResponse('Failed to link task to mind node.');
               }
               break;
 

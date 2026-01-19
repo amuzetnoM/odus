@@ -3,6 +3,7 @@ import { Component, inject, computed, signal, ChangeDetectionStrategy, effect } 
 import { CommonModule } from '@angular/common';
 import { ProjectService, Task } from '../../services/project.service';
 import { GeminiService, DayBriefing } from '../../services/gemini.service';
+import { isValidDate } from '../../utils/date-utils';
 
 @Component({
   selector: 'app-calendar-view',
@@ -224,13 +225,15 @@ export class CalendarViewComponent {
     const tasks = this.projectService.allTasks();
     
     for (const t of tasks) {
-        if (t.startDate) {
-           if (!taskMap.has(t.startDate)) taskMap.set(t.startDate, {starting: [], due: []});
-           taskMap.get(t.startDate)!.starting.push(t);
+        if (t.startDate && isValidDate(t.startDate)) {
+           const normalizedStart = t.startDate.split('T')[0]; // Ensure YYYY-MM-DD format
+           if (!taskMap.has(normalizedStart)) taskMap.set(normalizedStart, {starting: [], due: []});
+           taskMap.get(normalizedStart)!.starting.push(t);
         }
-        if (t.endDate) {
-           if (!taskMap.has(t.endDate)) taskMap.set(t.endDate, {starting: [], due: []});
-           taskMap.get(t.endDate)!.due.push(t);
+        if (t.endDate && isValidDate(t.endDate)) {
+           const normalizedEnd = t.endDate.split('T')[0]; // Ensure YYYY-MM-DD format
+           if (!taskMap.has(normalizedEnd)) taskMap.set(normalizedEnd, {starting: [], due: []});
+           taskMap.get(normalizedEnd)!.due.push(t);
         }
     }
 
@@ -253,9 +256,13 @@ export class CalendarViewComponent {
         const dStr = d.toISOString().split('T')[0];
         
         const bucket = taskMap.get(dStr) || {starting: [], due: []};
-        const ongoing = tasks.filter((t: any) => 
-            t.startDate && t.endDate && t.startDate < dStr && t.endDate > dStr
-        );
+        const ongoing = tasks.filter((t: any) => {
+            if (!t.startDate || !t.endDate) return false;
+            if (!isValidDate(t.startDate) || !isValidDate(t.endDate)) return false;
+            const start = t.startDate.split('T')[0];
+            const end = t.endDate.split('T')[0];
+            return start < dStr && end > dStr && t.status !== 'done';
+        });
 
         days.push({
             date: d,

@@ -13,6 +13,7 @@ import { CalendarViewComponent } from './components/views/calendar-view.componen
 import { DriveViewComponent } from './components/views/drive-view.component';
 import { GithubViewComponent } from './components/views/github-view.component';
 import { MindBoardComponent } from './components/views/mind-board.component';
+import { AnalyticsDashboardComponent } from './components/views/analytics-dashboard.component';
 import { AiAgentComponent } from './components/ai-agent.component';
 import { ToastComponent } from './components/ui/toast.component';
 import { LandingPageComponent } from './components/views/landing-page.component';
@@ -32,6 +33,7 @@ import { ZenModeComponent } from './components/zen-mode.component';
     DriveViewComponent,
     GithubViewComponent,
     MindBoardComponent,
+    AnalyticsDashboardComponent,
     AiAgentComponent,
     ToastComponent,
     LandingPageComponent,
@@ -98,6 +100,16 @@ import { ZenModeComponent } from './components/zen-mode.component';
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9V6M15 12h3M12 15v3M9 12H6"></path>
               </svg>
               <span class="hidden lg:block text-xs uppercase tracking-wider font-medium">Mind Board</span>
+            </button>
+
+            <button 
+              (click)="currentView.set('analytics')"
+              [class]="getNavLinkClass('analytics')"
+              class="flex items-center justify-center lg:justify-start gap-4 p-3 rounded-lg transition-all group">
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+              </svg>
+              <span class="hidden lg:block text-xs uppercase tracking-wider font-medium">Analytics</span>
             </button>
 
             <button 
@@ -209,6 +221,7 @@ import { ZenModeComponent } from './components/zen-mode.component';
             @case ('dashboard') { <app-dashboard /> }
             @case ('calendar') { <app-calendar-view /> }
             @case ('drive') { <app-drive-view /> }
+            @case ('analytics') { <app-analytics-dashboard /> }
             @case ('github') { <app-github-view class="h-full block" /> }
             @case ('mind') { <app-mind-board /> }
             @case ('projects') { 
