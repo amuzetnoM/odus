@@ -21,9 +21,9 @@ import { BlueprintsComponent } from './blueprints.component';
                     <div class="hidden md:flex gap-8 text-xs font-medium uppercase tracking-widest text-zinc-500">
                         <button (click)="showBlueprints.set(true)" class="hover:text-white transition-colors">Blueprints</button>
                     </div>
-                    <button (click)="launch.emit()" class="px-6 py-2 bg-white text-black text-xs font-bold uppercase tracking-widest rounded hover:scale-105 transition-transform shadow-[0_0_15px_rgba(255,255,255,0.3)]">
-                        Enter System
-                    </button>
+                    <a href="https://github.com" target="_blank" class="px-6 py-2 border border-white/10 bg-white/5 text-zinc-400 text-xs font-mono font-bold hover:text-white hover:bg-white/10 rounded transition-colors tracking-widest">
+                        .github
+                    </a>
                 </div>
             </nav>
 
@@ -38,10 +38,6 @@ import { BlueprintsComponent } from './blueprints.component';
                 </div>
 
                 <div class="relative z-10 text-center max-w-4xl px-6">
-                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] uppercase tracking-widest text-zinc-400 mb-8 backdrop-blur-md animate-fade-in-up">
-                        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                        System Online
-                    </div>
                     
                     <h1 class="text-5xl md:text-8xl font-thin tracking-tighter text-white mb-6 animate-fade-in-up" style="animation-delay: 0.1s">
                         PROJECT MGT <br />
@@ -94,8 +90,17 @@ import { BlueprintsComponent } from './blueprints.component';
                 </div>
             </section>
 
-            <footer class="py-12 bg-zinc-950 text-center text-[10px] text-zinc-600 uppercase tracking-widest border-t border-white/5">
-                ODUS AI • v1.0.0 • SYSTEM NOMINAL
+            <footer class="py-12 bg-zinc-950 text-center border-t border-white/5 space-y-3">
+                <div class="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">
+                    Artifact Virtual &copy; 2025 • All Rights Reserved
+                </div>
+                <div class="text-[10px] text-zinc-600 flex justify-center gap-4 font-mono uppercase">
+                    <span>Odus Systems</span>
+                    <span class="w-px h-3 bg-zinc-800"></span>
+                    <span>Odus AI</span>
+                    <span class="w-px h-3 bg-zinc-800"></span>
+                    <span>Beta v1.4.128</span>
+                </div>
             </footer>
         </div>
     }
