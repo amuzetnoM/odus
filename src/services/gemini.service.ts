@@ -152,6 +152,14 @@ export class GeminiService {
       return match ? match[1].trim() : text.trim();
   }
 
+  // --- Helper: Generate Random Duration ---
+  private getTaskDuration(providedDuration?: number): number {
+      if (typeof providedDuration === 'number' && providedDuration > 0) {
+          return providedDuration;
+      }
+      return Math.floor(Math.random() * (TASK_DURATION.MAX_RANDOM - TASK_DURATION.MIN_RANDOM + 1)) + TASK_DURATION.MIN_RANDOM;
+  }
+
   // --- Core Generation Logic (Multi-Provider) ---
 
   private async generateText(prompt: string, systemInstruction?: string, jsonSchema?: any): Promise<string> {
@@ -322,9 +330,7 @@ export class GeminiService {
               const start = new Date(today);
               start.setDate(today.getDate() + (t.startOffset || 0));
               
-              const duration = typeof t.duration === 'number' && t.duration > 0 
-                  ? t.duration 
-                  : Math.floor(Math.random() * (TASK_DURATION.MAX_RANDOM - TASK_DURATION.MIN_RANDOM + 1)) + TASK_DURATION.MIN_RANDOM;
+              const duration = this.getTaskDuration(t.duration);
               const end = new Date(start);
               end.setDate(start.getDate() + duration);
 
@@ -573,9 +579,7 @@ Return ONLY valid JSON matching this structure:
               const start = new Date(today); 
               start.setDate(today.getDate() + (t.startDayOffset || 0));
               
-              const duration = typeof t.durationDays === 'number' && t.durationDays > 0 
-                  ? t.durationDays 
-                  : Math.floor(Math.random() * (TASK_DURATION.MAX_RANDOM - TASK_DURATION.MIN_RANDOM + 1)) + TASK_DURATION.MIN_RANDOM;
+              const duration = this.getTaskDuration(t.durationDays);
               const end = new Date(start); 
               end.setDate(start.getDate() + duration);
 
