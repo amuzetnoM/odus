@@ -63,4 +63,20 @@ export class GithubService {
         return null; // File likely doesn't exist
       }
   }
+
+  async validateConnection(token: string): Promise<boolean> {
+     if (!token) return true;
+     
+    try {
+      const response = await fetch('https://api.github.com/user', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
 }

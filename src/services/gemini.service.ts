@@ -1,6 +1,6 @@
 
 import { Injectable, inject } from '@angular/core';
-import { GoogleGenAI, Type, SchemaType, Content } from '@google/genai';
+import { GoogleGenAI, Type, Schema, Content } from '@google/genai';
 import { Task, Project } from './project.service';
 import { PersistenceService } from './persistence.service';
 
@@ -30,13 +30,30 @@ export class GeminiService {
   }
 
   private init() {
-    const key = localStorage.getItem('gemini_api_key') || process.env['API_KEY'] || '';
+    // Production Requirement: Keys are strictly user-managed via Settings (LocalStorage)
+    // No process.env fallback to prevent accidental commit leakage
+    const key = localStorage.getItem('gemini_api_key') || '';
     this.ai = new GoogleGenAI({ apiKey: key });
   }
 
   updateApiKey(key: string) {
     localStorage.setItem('gemini_api_key', key);
     this.init();
+  }
+  
+  async validateConnection(key: string): Promise<boolean> {
+      if (!key) return false;
+      try {
+          const testAi = new GoogleGenAI({ apiKey: key });
+          await testAi.models.generateContent({
+              model: 'gemini-2.5-flash',
+              contents: 'ping',
+          });
+          return true;
+      } catch (e) {
+          console.error('Gemini Validation Failed', e);
+          return false;
+      }
   }
 
   // --- Smart Features ---
@@ -277,7 +294,7 @@ export class GeminiService {
       ${context}
     `;
 
-    const taskSchema: SchemaType = {
+    const taskSchema: Schema = {
         type: Type.OBJECT,
         properties: {
           title: { type: Type.STRING },
@@ -438,7 +455,7 @@ export class GeminiService {
   // --- Existing Methods (Preserved) ---
   async generateProjectStructure(description: string): Promise<{ title: string, description: string, tasks: Task[] }> {
     const model = 'gemini-2.5-flash';
-    const responseSchema: SchemaType = {
+    const responseSchema: Schema = {
       type: Type.OBJECT,
       properties: {
         title: { type: Type.STRING },

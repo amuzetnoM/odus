@@ -53,12 +53,9 @@ import { SettingsModalComponent } from './components/settings-modal.component';
         <!-- Sidebar -->
         <aside class="w-16 lg:w-64 border-r border-white/5 bg-zinc-950/50 backdrop-blur-md flex flex-col shrink-0 z-10 transition-all duration-300 relative group">
           
-          <!-- Header -->
+          <!-- Header (Minimalist O) -->
           <div class="p-4 lg:p-6 flex items-center justify-center lg:justify-start gap-3 border-b border-white/5">
-            <div class="w-8 h-8 bg-white text-black flex items-center justify-center font-bold text-xs rounded-sm shrink-0">
-              O
-            </div>
-            <span class="hidden lg:block font-light tracking-[0.2em] text-sm text-white">ODUS</span>
+             <span class="block font-bold text-xl text-white">O</span>
           </div>
 
           <!-- Nav -->
@@ -67,8 +64,8 @@ import { SettingsModalComponent } from './components/settings-modal.component';
               (click)="currentView.set('dashboard')"
               [class]="getNavLinkClass('dashboard')"
               class="flex items-center justify-center lg:justify-start gap-4 p-3 rounded-lg transition-all group">
-              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-              <span class="hidden lg:block text-xs uppercase tracking-wider font-medium">System</span>
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+              <span class="hidden lg:block text-xs uppercase tracking-wider font-medium">Scope</span>
             </button>
 
             <button 
@@ -261,6 +258,12 @@ export class AppComponent {
         this.appControlService.navigationRequest.set(null);
       }
     });
+
+    // Production Requirement: Ensure API Key exists, or prompt user immediately
+    const key = localStorage.getItem('gemini_api_key');
+    if (!key) {
+        setTimeout(() => this.showSettingsModal.set(true), 1500);
+    }
   }
 
   launchApp() {

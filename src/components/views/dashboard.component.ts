@@ -6,18 +6,19 @@ import { ProjectService, Task, TaskMetadata, Priority } from '../../services/pro
 import { DriveService } from '../../services/drive.service';
 import { GeminiService } from '../../services/gemini.service';
 import { MindService } from '../../services/mind.service';
+import { SuccessRoadmapComponent } from './success-roadmap.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SuccessRoadmapComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="h-full flex flex-col p-4 sm:p-8 overflow-hidden">
       <!-- Header with responsive wrapping and right-aligned input -->
       <div class="mb-8 flex flex-wrap items-end gap-4 shrink-0">
          <div class="min-w-[120px] mr-auto flex flex-col gap-1">
-            <h1 class="text-2xl font-extralight text-white tracking-widest mb-0">ODUS</h1>
+            <h1 class="text-2xl font-extralight text-white tracking-widest mb-0">SCOPE</h1>
             <div class="flex items-center gap-2">
                <p class="text-xs text-zinc-500 font-light tracking-wide uppercase">System Status: Nominal</p>
                <button (click)="resetSystem()" class="text-[9px] text-red-900 hover:text-red-500 hover:bg-red-950/20 px-1 rounded transition-colors uppercase border border-transparent hover:border-red-900" title="Wipe all data">Reset</button>
@@ -42,11 +43,11 @@ import { MindService } from '../../services/mind.service';
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 min-h-0">
          
-         <!-- Founder's Focus List -->
+         <!-- Focus List -->
          <div class="flex flex-col min-h-0 bg-zinc-900/10 border border-white/5 rounded-xl p-4 relative overflow-hidden backdrop-blur-sm">
             <div class="flex justify-between items-center mb-4 shrink-0">
                 <h2 class="text-xs font-semibold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-                   <span class="w-1 h-1 bg-white rounded-full shadow-[0_0_8px_white]"></span> Founder's Focus
+                   <span class="w-1 h-1 bg-white rounded-full shadow-[0_0_8px_white]"></span> Focus
                 </h2>
                 <button 
                   (click)="curateFocusList()"
@@ -163,28 +164,9 @@ import { MindService } from '../../services/mind.service';
             </div>
          </div>
 
-         <!-- Recent Files -->
-         <div class="flex flex-col min-h-0">
-            <h2 class="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-               <span class="w-1 h-1 bg-zinc-600 rounded-full"></span> Recent Data
-            </h2>
-            <div class="flex-1 overflow-y-auto custom-scrollbar space-y-1 pr-2">
-               @for (file of recentFiles(); track file.id) {
-                  <div class="flex items-center gap-3 p-3 rounded border border-transparent hover:border-white/5 hover:bg-zinc-900/30 transition-colors">
-                     <div class="w-8 h-8 rounded bg-zinc-800/50 flex items-center justify-center text-[10px] font-bold text-zinc-400 border border-white/5">
-                        {{ file.type }}
-                     </div>
-                     <div class="flex-1 min-w-0">
-                        <div class="text-sm text-zinc-300 font-light truncate">{{ file.name }}</div>
-                        <div class="text-[10px] text-zinc-600">{{ file.sizeStr }} • {{ file.createdAt | date:'shortDate' }}</div>
-                     </div>
-                  </div>
-               } @empty {
-                  <div class="p-8 border border-dashed border-zinc-800 rounded text-center text-zinc-600 font-light text-sm">
-                     No data stored.
-                  </div>
-               }
-            </div>
+         <!-- Success Roadmap (Replaces Recent Data) -->
+         <div class="flex flex-col min-h-0 h-full">
+            <app-success-roadmap class="h-full block" />
          </div>
       </div>
     </div>
@@ -212,10 +194,6 @@ export class DashboardComponent {
     return this.projectService.allTasks()
       .filter((t: any) => t.inFocusList && t.status !== 'done')
       .sort((a: any, b: any) => (a.focusIndex ?? 9999) - (b.focusIndex ?? 9999));
-  });
-
-  recentFiles = computed(() => {
-      return [...this.driveService.files()].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 10);
   });
 
   resetSystem() {
@@ -335,13 +313,7 @@ export class DashboardComponent {
       const tasks = this.focusTasks();
       if (this.draggedTaskIndex > -1 && this.draggedTaskIndex < tasks.length) {
           const task = tasks[this.draggedTaskIndex];
-          // Temporarily remove index
           this.projectService.updateTask((task as any).projectId, task.id, { focusIndex: -1 });
-          
-          // Re-index on next tick based on drop position logic (simplified here to re-order list locally)
-          // For a full implementation, we'd calculate target index based on drop target.
-          // Since drag and drop reordering usually requires complex target calculation, 
-          // we'll defer that or keep simple appending for now. 
       }
   }
 }
