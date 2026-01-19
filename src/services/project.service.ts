@@ -21,6 +21,7 @@ export interface TaskMetadata {
   location?: string;
   notes?: string;
   dueDate?: string;
+  mindNodeId?: string;  // Reference to linked mind map node
 }
 
 export interface Task {

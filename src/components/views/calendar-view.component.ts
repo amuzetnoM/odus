@@ -227,7 +227,7 @@ export class CalendarViewComponent {
     const isValidDate = (dateStr: string | undefined): boolean => {
         if (!dateStr) return false;
         const date = new Date(dateStr);
-        return !isNaN(date.getTime()) && dateStr.match(/^\d{4}-\d{2}-\d{2}$/);
+        return !isNaN(date.getTime()) && !!dateStr.match(/^\d{4}-\d{2}-\d{2}$/);
     };
     
     for (const t of tasks) {

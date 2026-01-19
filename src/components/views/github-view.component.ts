@@ -315,58 +315,114 @@ export class GithubViewComponent {
           this.log(`Initiating connection to ${repo.name}...`);
           this.log(`Fetching latest commits from branch: ${repo.default_branch}...`);
           const commits = await this.githubService.getRepoCommits(repo.owner.login, repo.name);
-          const commitSummary = commits.map((c: any) => `- ${c.commit.message} (${c.commit.author.name})`).join('\n');
+          
+          // Extract more context from commits
+          const commitSummary = commits.map((c: any) => 
+              `- ${c.commit.message} (${c.commit.author.name}, ${c.commit.author.date?.split('T')[0]})`
+          ).join('\n');
           this.log(`Retrieved ${commits.length} recent commits.`);
           
-          // 2. Fetch File Tree
+          // 2. Fetch File Tree with categorization
           this.log(`Scanning file tree structure...`);
           const treeData = await this.githubService.getRepoTree(repo.owner.login, repo.name);
           
-          const files = treeData.tree
-            .filter((t: any) => t.type === 'blob')
-            .map((t: any) => t.path)
-            .slice(0, 300) 
-            .join('\n');
-            
+          // Categorize files by type for better context
+          const filesByType: Record<string, string[]> = {
+              source: [],
+              test: [],
+              config: [],
+              docs: [],
+              other: []
+          };
+          
+          treeData.tree.filter((t: any) => t.type === 'blob').forEach((t: any) => {
+              const path = t.path;
+              if (path.match(/\.(ts|js|tsx|jsx|py|java|go|rs|cpp|c|cs)$/)) {
+                  filesByType.source.push(path);
+              } else if (path.match(/(test|spec|__tests__|tests)\//i) || path.match(/\.(test|spec)\.(ts|js|tsx|jsx|py)$/)) {
+                  filesByType.test.push(path);
+              } else if (path.match(/\.(json|yaml|yml|toml|xml|conf|config|env)$/)) {
+                  filesByType.config.push(path);
+              } else if (path.match(/\.(md|txt|rst|adoc)$/i) || path.match(/(docs?|documentation)\//i)) {
+                  filesByType.docs.push(path);
+              } else {
+                  filesByType.other.push(path);
+              }
+          });
+          
+          // Create structured file summary
+          const fileStructure = `
+File Structure Analysis:
+- Source files (${filesByType.source.length}): ${filesByType.source.slice(0, 100).join(', ')}${filesByType.source.length > 100 ? '...' : ''}
+- Test files (${filesByType.test.length}): ${filesByType.test.slice(0, 50).join(', ')}${filesByType.test.length > 50 ? '...' : ''}
+- Config files (${filesByType.config.length}): ${filesByType.config.join(', ')}
+- Documentation (${filesByType.docs.length}): ${filesByType.docs.join(', ')}
+- Other files (${filesByType.other.length}): ${filesByType.other.slice(0, 30).join(', ')}${filesByType.other.length > 30 ? '...' : ''}
+          `.trim();
+          
           this.log(`Mapped ${treeData.tree.length} file system nodes.`);
+          this.log(`Categorized: ${filesByType.source.length} source, ${filesByType.test.length} tests, ${filesByType.config.length} configs`);
 
-          // 3. Fetch Deep Context (Readme / Package.json)
+          // 3. Fetch Deep Context (Readme / Package.json / Additional configs)
           this.log(`Retrieving documentation (README.md)...`);
           const readme = await this.githubService.getFileContent(repo.owner.login, repo.name, 'README.md');
           
-          this.log(`Retrieving configuration (package.json)...`);
+          this.log(`Retrieving configuration files...`);
           const packageJson = await this.githubService.getFileContent(repo.owner.login, repo.name, 'package.json');
+          
+          // Try to get additional context files
+          const pyproject = await this.githubService.getFileContent(repo.owner.login, repo.name, 'pyproject.toml');
+          const cargoToml = await this.githubService.getFileContent(repo.owner.login, repo.name, 'Cargo.toml');
+          const goMod = await this.githubService.getFileContent(repo.owner.login, repo.name, 'go.mod');
 
-          // 4. Persistence Snapshot
+          // 4. Persistence Snapshot (save richer context)
           this.log(`Snapshotting state to local persistence layer...`);
           await this.persistence.saveRepoData(repo.id, { 
               name: repo.name, 
-              commits: commits.slice(0, 5), 
-              structure: files.substring(0, 100) + '...' 
+              description: repo.description,
+              language: repo.language,
+              commits: commits.slice(0, 10), 
+              fileStructure: filesByType,
+              totalFiles: treeData.tree.length
           });
 
-          // 5. Multi-Pass AI Analysis
+          // 5. Multi-Pass AI Analysis with richer context
           this.log(`[PASS 1] Transmitting context to AI Analysis Core (Drafting)...`);
-          this.log(`Context Size: ~${(files.length + commitSummary.length + (readme?.length||0)).toString()} bytes`);
+          const contextSize = fileStructure.length + commitSummary.length + (readme?.length || 0) + (packageJson?.length || 0);
+          this.log(`Context Size: ~${contextSize.toLocaleString()} bytes`);
           
           const tasks = await this.geminiService.analyzeRepoAndPlan(
               repo.name, 
-              files, 
+              fileStructure, 
               commitSummary,
               readme,
-              packageJson
+              packageJson,
+              {
+                  language: repo.language,
+                  stars: repo.stargazers_count,
+                  pyproject,
+                  cargoToml,
+                  goMod,
+                  filesByType
+              }
           );
           
           if (tasks.length > 0) {
               this.log(`[PASS 2] AI Review Loop complete. Refined task list generated.`);
-              this.log(`Generated ${tasks.length} strategic tasks.`);
+              this.log(`Generated ${tasks.length} strategic tasks with dependencies.`);
           } else {
               this.log(`WARNING: AI Analysis yielded 0 tasks. Check context size or API limits.`);
           }
           
-          this.projectService.addProject(repo.name, `GitHub Imported: ${repo.description || ''}`, tasks);
+          // Add project with richer description
+          const projectDesc = `GitHub Repository: ${repo.description || 'No description'}
+Language: ${repo.language || 'Unknown'}
+Stars: ${repo.stargazers_count || 0}
+Last Updated: ${repo.updated_at?.split('T')[0] || 'Unknown'}`;
           
-          this.log(`Board "${repo.name}" initialized successfully.`);
+          this.projectService.addProject(repo.name, projectDesc, tasks);
+          
+          this.log(`Board "${repo.name}" initialized successfully with ${tasks.length} tasks.`);
           this.log(`Process terminated. Ready.`);
 
       } catch (e) {

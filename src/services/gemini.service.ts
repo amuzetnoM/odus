@@ -500,10 +500,14 @@ export class GeminiService {
 
   // --- Complex Methods (Repo Analysis & Chat) ---
 
-  async analyzeRepoAndPlan(repoName: string, fileStructure: string, commitHistory: string, readme: string | null, packageJson: string | null): Promise<Task[]> {
-      const prompt = `Analyze Repository: "${repoName}"
+  async analyzeRepoAndPlan(repoName: string, fileStructure: string, commitHistory: string, readme: string | null, packageJson: string | null, additionalContext?: any): Promise<Task[]> {
+      const languageInfo = additionalContext?.language ? `\nPrimary Language: ${additionalContext.language}` : '';
+      const projectConfig = additionalContext?.pyproject || additionalContext?.cargoToml || additionalContext?.goMod || '';
+      const popularityInfo = additionalContext?.stars ? `\nRepository Stars: ${additionalContext.stars}` : '';
+      
+      const prompt = `Analyze Repository: "${repoName}"${languageInfo}${popularityInfo}
 
-FILE STRUCTURE:
+FILE STRUCTURE (Categorized):
 ${fileStructure}
 
 RECENT COMMITS:
@@ -515,29 +519,49 @@ ${readme || 'No README found'}
 PACKAGE.JSON:
 ${packageJson || 'No package.json found'}
 
-TASK: Create a comprehensive project plan with task dependencies.
+${projectConfig ? `ADDITIONAL CONFIG:\n${projectConfig.substring(0, 1000)}` : ''}
+
+TASK: Create a comprehensive, detailed project plan with proper task dependencies and rich descriptions.
 
 CRITICAL REQUIREMENTS:
-1. Generate 8-15 granular, actionable tasks
-2. PRIORITY DISTRIBUTION (MANDATORY):
+1. Generate 8-15 granular, actionable tasks based on the actual codebase analysis
+2. Use the file structure to inform task breakdown (e.g., separate tasks for different modules/components)
+3. Use commit history to identify recent work and suggest next steps
+4. Extract technical details from package.json/configs to create specific tasks
+
+5. PRIORITY DISTRIBUTION (MANDATORY):
    - Exactly 20-30% tasks must be "high" priority (critical path items like architecture, core features, blockers)
    - Exactly 50-60% tasks must be "medium" priority (standard features, improvements)
    - Exactly 20-30% tasks must be "low" priority (polish, documentation, nice-to-haves)
-3. DEPENDENCIES (MANDATORY):
+
+6. DEPENDENCIES (MANDATORY):
    - Each task MUST have a "dependsOn" array with 0-3 task indices (use array index, 0-based)
    - Create logical dependency chains: setup → implementation → testing → deployment
    - Example: Task 3 depends on tasks 0 and 1: "dependsOn": [0, 1]
-4. SCHEDULING:
+
+7. RICH DESCRIPTIONS:
+   - Each task description should be detailed (50-200 chars)
+   - Include technical context from the codebase
+   - Reference specific files or modules when relevant
+   - Describe WHY the task is important, not just WHAT
+
+8. SCHEDULING:
    - Assign realistic durationDays (2-14 days based on complexity)
    - startDayOffset should account for dependencies (dependent tasks start after prerequisites)
-5. TAGS: Use 2-4 letter codes like 'ARCH', 'FEAT', 'TEST', 'DOCS', 'BUG', 'OPS', 'UI/UX'
+
+9. TAGS: Use relevant codes based on the repository:
+   - For code: 'ARCH', 'FEAT', 'REFAC', 'PERF'
+   - For testing: 'TEST', 'QA', 'E2E'
+   - For ops: 'DOCS', 'OPS', 'CI/CD', 'SEC'
+   - For fixes: 'BUG', 'FIX', 'HOTFIX'
+   - Tech-specific: 'UI/UX', 'API', 'DB', 'AUTH'
 
 Return ONLY valid JSON matching this structure:
 {
   "tasks": [
     {
-      "title": "string",
-      "description": "string",
+      "title": "string (60 chars max, descriptive)",
+      "description": "string (detailed, 50-200 chars with context)",
       "priority": "high|medium|low",
       "status": "todo",
       "tags": ["string"],
