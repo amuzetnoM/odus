@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { ProjectService } from './services/project.service';
 import { DriveService } from './services/drive.service';
 import { AppControlService, AppView } from './services/app-control.service';
+import { NotificationService } from './services/notification.service';
 import { ProjectBoardComponent } from './components/project-board.component';
 import { CreateProjectComponent } from './components/create-project.component';
 import { DashboardComponent } from './components/views/dashboard.component';
@@ -15,6 +16,7 @@ import { AiAgentComponent } from './components/ai-agent.component';
 import { ToastComponent } from './components/ui/toast.component';
 import { LandingPageComponent } from './components/views/landing-page.component';
 import { SettingsModalComponent } from './components/settings-modal.component';
+import { NotificationPanelComponent } from './components/notification-panel.component';
 
 @Component({
   selector: 'app-root',
@@ -31,7 +33,8 @@ import { SettingsModalComponent } from './components/settings-modal.component';
     AiAgentComponent,
     ToastComponent,
     LandingPageComponent,
-    SettingsModalComponent
+    SettingsModalComponent,
+    NotificationPanelComponent
   ],
   template: `
     @if (showLanding()) {
@@ -132,8 +135,23 @@ import { SettingsModalComponent } from './components/settings-modal.component';
               </button>
             </div>
 
-            <!-- Settings Cog -->
+            <!-- Settings & Notifications -->
              <div class="my-2 border-t border-white/5 mx-2"></div>
+             
+             <!-- Notification Bell -->
+             <button 
+               (click)="showNotifications.set(!showNotifications())"
+               class="flex items-center justify-center lg:justify-start gap-4 p-3 rounded-lg transition-all text-zinc-500 hover:text-white hover:bg-white/5 group relative">
+               <div class="relative">
+                  <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                  @if(notificationService.unreadCount() > 0) {
+                     <span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-indigo-500 border border-zinc-950 rounded-full flex items-center justify-center text-[7px] text-white font-bold">{{ notificationService.unreadCount() > 9 ? '!' : notificationService.unreadCount() }}</span>
+                  }
+               </div>
+               <span class="hidden lg:block text-xs uppercase tracking-wider font-medium">Alerts</span>
+             </button>
+
+             <!-- Config -->
              <button 
                (click)="showSettingsModal.set(true)"
                class="flex items-center justify-center lg:justify-start gap-4 p-3 rounded-lg transition-all text-zinc-500 hover:text-white hover:bg-white/5 group">
@@ -212,6 +230,10 @@ import { SettingsModalComponent } from './components/settings-modal.component';
 
         <app-ai-agent />
         <app-toast />
+        
+        @if (showNotifications()) {
+            <app-notification-panel (close)="showNotifications.set(false)" />
+        }
 
         <!-- Drag Overlay -->
         @if (isDragging()) {
@@ -242,10 +264,12 @@ export class AppComponent {
   projectService = inject(ProjectService);
   driveService = inject(DriveService);
   appControlService = inject(AppControlService);
+  notificationService = inject(NotificationService);
   
   showLanding = signal(true);
   showCreateModal = signal(false);
   showSettingsModal = signal(false);
+  showNotifications = signal(false);
   currentView = signal<AppView>('dashboard');
   isDragging = signal(false);
   

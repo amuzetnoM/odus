@@ -2,6 +2,7 @@
 import { Component, input, output, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Project, ProjectService, Task, TaskStatus } from '../../services/project.service';
+import { AuthService } from '../../services/auth.service';
 import { TaskCardComponent } from '../task-card.component';
 
 type SortOption = 'smart' | 'date' | 'priority' | 'created';
@@ -20,7 +21,7 @@ type SortOption = 'smart' | 'date' | 'priority' | 'created';
              <div class="flex -space-x-1">
                  <!-- Mock Avatars for "Team" feel -->
                  <div class="w-5 h-5 rounded-full bg-zinc-700 border border-zinc-900 flex items-center justify-center text-[8px] text-white">AI</div>
-                 <div class="w-5 h-5 rounded-full bg-indigo-500 border border-zinc-900 flex items-center justify-center text-[8px] text-white">U</div>
+                 <img [src]="user().avatar" class="w-5 h-5 rounded-full border border-zinc-900 object-cover" [title]="user().name" />
              </div>
              <span class="text-[10px] font-mono text-zinc-500 uppercase border-l border-zinc-800 pl-3">{{ taskCounts().total }} Artifacts</span>
          </div>
@@ -148,9 +149,13 @@ export class KanbanBoardComponent {
   taskClick = output<Task>();
   
   private projectService = inject(ProjectService);
+  private authService = inject(AuthService);
   
   sortBy = signal<SortOption>('smart');
   dragOverColumn = signal<TaskStatus | null>(null);
+  
+  // Reactive User Info
+  user = this.authService.currentUser;
 
   getSortBtnClass(option: SortOption) {
       const active = this.sortBy() === option;

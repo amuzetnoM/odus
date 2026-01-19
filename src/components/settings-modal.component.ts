@@ -6,6 +6,7 @@ import { GeminiService } from '../services/gemini.service';
 import { GithubService } from '../services/github.service';
 import { AuthService } from '../services/auth.service';
 import { NotificationService } from '../services/notification.service';
+import { ProjectService } from '../services/project.service';
 
 type SettingsTab = 'profile' | 'system';
 
@@ -187,6 +188,7 @@ export class SettingsModalComponent {
   private geminiService = inject(GeminiService);
   private githubService = inject(GithubService);
   private authService = inject(AuthService);
+  private projectService = inject(ProjectService);
   private notification = inject(NotificationService);
 
   activeTab = signal<SettingsTab>('profile');
@@ -237,7 +239,10 @@ export class SettingsModalComponent {
               }
           });
 
-          // 2. Validate & Save System Config (If changed or keys exist)
+          // 2. Propagate Identity Changes to Artifacts (Comments, etc)
+          this.projectService.updateUserIdentity(this.userId(), this.userName(), this.userAvatar());
+
+          // 3. Validate & Save System Config (If changed or keys exist)
           const gKey = this.geminiKey();
           const ghToken = this.githubToken();
           
