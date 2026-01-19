@@ -1,13 +1,13 @@
 ---
 title: Features Reference
 description: Complete guide to all ODUS capabilities and workflows
-version: 1.4.0
+version: 1.0.0-beta
 last_updated: 2026-01-19
 ---
 
 ![Features](https://img.shields.io/badge/Features-Complete-green?style=flat-square)
 ![AI](https://img.shields.io/badge/AI-Native-purple?style=flat-square)
-![Version](https://img.shields.io/badge/Version-1.4.0-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.0.0--beta-success?style=flat-square)
 
 ## Core Features Overview
 
@@ -748,7 +748,7 @@ Task Weight = (Priority × 10/5/2) +
 ### AI Provider Configuration
 
 **Supported Providers**:
-- **Gemini 2.0 Flash** (default, free tier available)
+- **Provider-agnostic AI** (default: Gemini 2.0 Flash). Supports OpenAI, Anthropic, Ollama (local), OpenRouter.
 - **OpenAI GPT-4** (requires API key)
 - **Claude 3** (Anthropic API key)
 - **Ollama** (local, no API key)

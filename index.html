@@ -63,7 +63,17 @@
 }
 </script>
 </head>
-<body class="bg-zinc-950 text-zinc-300 overflow-hidden h-screen w-screen selection:bg-indigo-500/30">
+<body class="bg-zinc-950 text-zinc-300 overflow-y-auto min-h-screen w-screen selection:bg-indigo-500/30">
+  <style>
+    /* Scroll fixes: enable main app scroll and improve responsive container widths */
+    app-root > div, app-root main, .flex-1, .h-full { overflow: auto !important; -webkit-overflow-scrolling: touch; }
+    @media (min-width: 1024px) {
+      .max-w-4xl { max-width: 72rem; }
+      .max-w-5xl { max-width: 80rem; }
+      .max-w-6xl { max-width: 88rem; }
+      .max-w-7xl { max-width: 96rem; }
+    }
+  </style>
   <app-root></app-root>
 </body>
 </html>

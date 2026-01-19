@@ -15,7 +15,7 @@ type ProjectView = 'kanban' | 'gantt' | 'graph';
   standalone: true,
   imports: [CommonModule, KanbanBoardComponent, GanttChartComponent, DependencyGraphComponent, TaskDetailComponent],
   template: `
-    <div class="flex flex-col h-full bg-zinc-950/50 backdrop-blur-md rounded border border-white/5 overflow-hidden transition-all duration-300 relative group">
+    <div class="flex flex-col h-full bg-zinc-950/50 backdrop-blur-md rounded border border-white/5 overflow-auto transition-all duration-300 relative group">
       <!-- Header -->
       <div class="p-4 border-b border-white/5 bg-zinc-950/80 shrink-0 flex flex-col gap-4">
         <div class="flex justify-between items-start">

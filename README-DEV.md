@@ -4,10 +4,10 @@
 ![Angular](https://img.shields.io/badge/Angular-v18+-dd0031?style=flat-square&logo=angular)
 ![AI](https://img.shields.io/badge/AI-Provider_Agnostic-8e75b2?style=flat-square)
 ![Tailwind](https://img.shields.io/badge/Style-Tailwind_CSS-38bdf8?style=flat-square&logo=tailwindcss)
-![Version](https://img.shields.io/badge/Version-1.3.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.0.0--beta-blue?style=flat-square)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen?style=flat-square)
 
-**Version:** 1.3.0  
+**Version:** 1.0.0-beta  
 **Framework:** Angular 18+ (Zoneless, Signals)  
 **Styling:** Tailwind CSS (Dark/Light Mode Support)  
 **AI Core:** Provider-agnostic (default: Google Gemini 2.0) — supports OpenAI, Anthropic, Ollama (local), OpenRouter

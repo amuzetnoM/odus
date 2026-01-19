@@ -265,7 +265,7 @@ If applicable
 **Environment:**
 - Browser: [e.g., Chrome 120]
 - OS: [e.g., Windows 11]
-- ODUS Version: [e.g., 1.4.0]
+- ODUS Version: [e.g., 1.0.0-beta]
 
 **Additional Context:**
 Any other relevant information

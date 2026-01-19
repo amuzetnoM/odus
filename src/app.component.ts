@@ -46,7 +46,7 @@ import { ZenModeComponent } from './components/zen-mode.component';
       <app-landing-page (launch)="launchApp()" />
     } @else {
       <div 
-        class="flex h-screen w-screen bg-zinc-950 text-zinc-300 font-sans relative overflow-hidden animate-fade-in"
+        class="flex min-h-screen w-screen bg-zinc-950 text-zinc-300 font-sans relative overflow-auto animate-fade-in"
         (dragover)="onDragOver($event)"
         (dragleave)="onDragLeave($event)"
         (drop)="onDrop($event)"
@@ -216,7 +216,7 @@ import { ZenModeComponent } from './components/zen-mode.component';
         </aside>
 
         <!-- Content -->
-        <main class="flex-1 flex flex-col relative min-w-0 h-full overflow-hidden">
+        <main class="flex-1 flex flex-col relative min-w-0 h-full overflow-auto">
           @switch (currentView()) {
             @case ('dashboard') { <app-dashboard /> }
             @case ('calendar') { <app-calendar-view /> }

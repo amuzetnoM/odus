@@ -11,7 +11,7 @@ import { ProjectService } from '../services/project.service';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-md">
-      <div class="w-full max-w-lg bg-black border border-zinc-800 shadow-2xl p-8 relative overflow-hidden">
+      <div class="w-full max-w-xl bg-black border border-zinc-800 shadow-2xl p-8 relative overflow-auto">
         
         <!-- Decoration -->
         <div class="absolute -top-20 -right-20 w-64 h-64 bg-zinc-800/20 rounded-full blur-3xl pointer-events-none"></div>

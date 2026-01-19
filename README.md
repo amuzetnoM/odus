@@ -1,9 +1,9 @@
 # ODUS - AI-First Project Management
 
 ![Angular](https://img.shields.io/badge/Angular-21.1-dd0031?style=flat-square&logo=angular)
-![AI](https://img.shields.io/badge/AI-Gemini_2.0_Flash-8e75b2?style=flat-square&logo=google-gemini)
+![AI](https://img.shields.io/badge/AI-Provider_Agnostic-8e75b2?style=flat-square)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?style=flat-square&logo=typescript)
-![Version](https://img.shields.io/badge/Version-1.4.0-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.0.0--beta-success?style=flat-square)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen?style=flat-square)
 
 <div align="center">
@@ -77,7 +77,7 @@ Application runs at **http://localhost:3000**
 ### First-Time Setup
 1. Open ODUS in your browser
 2. Navigate to **Settings** → **API Configuration**
-3. Enter your **Gemini API Key**
+3. Enter your **AI Provider key** (Gemini/OpenAI/Anthropic/OpenRouter/Ollama local)
 4. (Optional) Add **GitHub Personal Access Token** for repo import
 
 ---

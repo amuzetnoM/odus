@@ -1,13 +1,13 @@
 ---
 title: Documentation Index
 description: Complete ODUS documentation navigation
-version: 1.4.0
+version: 1.0.0-beta
 last_updated: 2026-01-19
 ---
 
 ![ODUS](https://img.shields.io/badge/ODUS-AI_Project_Manager-8e75b2?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTIgMkw0IDZWMTJDNCAxNi40IDE3LjIgMjIgMTIgMjJDMTcuMiAyMiAyMCAxNi40IDIwIDEyVjZMMTIgMloiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=)
 
-![Version](https://img.shields.io/badge/Version-1.4.0-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.0.0--beta-success?style=flat-square)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-gray?style=flat-square)
 
@@ -224,7 +224,7 @@ npm run test:e2e    # E2E tests (Playwright)
 
 ## Version History
 
-### v1.4.0 (Current)
+### v1.0.0-beta (Current)
 - Enhanced GitHub import with file categorization
 - Improved success roadmap algorithm (weighted scoring)
 - AI focus list curation
@@ -264,7 +264,7 @@ npm run test:e2e    # E2E tests (Playwright)
 ### v1.0.0
 - Initial release
 - Basic project management
-- AI integration (Gemini)
+- AI integration (provider-agnostic; default: Gemini)
 
 ---
 
@@ -293,6 +293,6 @@ MIT License - See [LICENSE](../LICENSE) file
 
 ---
 
-**Built with care using Angular 21, Gemini AI, and local-first architecture.**
+**Built with care using Angular 21, a provider-agnostic AI core (default: Gemini 2.0), and a local-first architecture.**
 
-Last Updated: 2026-01-19 | Version 1.4.0
+Last Updated: 2026-01-19 | Version 1.0.0-beta

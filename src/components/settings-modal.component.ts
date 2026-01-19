@@ -16,7 +16,7 @@ type SettingsTab = 'profile' | 'system';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" (click)="close.emit()">
-      <div class="w-full max-w-md bg-zinc-950 border border-white/10 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" (click)="$event.stopPropagation()">
+      <div class="w-full max-w-lg bg-zinc-950 border border-white/10 rounded-xl shadow-2xl overflow-auto flex flex-col max-h-[92vh]" (click)="$event.stopPropagation()">
         
         <!-- Header -->
         <div class="p-6 border-b border-white/5 bg-zinc-900/50 flex justify-between items-center shrink-0">

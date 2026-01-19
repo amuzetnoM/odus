@@ -1,7 +1,7 @@
 ---
 title: System Architecture
 description: Technical deep-dive into ODUS architecture and design patterns
-version: 1.4.0
+version: 1.0.0-beta
 last_updated: 2026-01-19
 ---
 

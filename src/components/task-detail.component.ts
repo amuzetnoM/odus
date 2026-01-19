@@ -15,7 +15,7 @@ type Tab = 'details' | 'comments' | 'time';
   template: `
     <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" (click)="close.emit()">
       <div 
-        class="w-full max-w-5xl bg-zinc-950/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl flex flex-col h-[90vh] overflow-hidden animate-scale-in relative" 
+        class="w-full max-w-6xl bg-zinc-950/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl flex flex-col h-[92vh] overflow-auto animate-scale-in relative" 
         (click)="$event.stopPropagation()">
         
         <!-- Decoration -->

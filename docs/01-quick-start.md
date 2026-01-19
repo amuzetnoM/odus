@@ -1,13 +1,13 @@
 ---
 title: Quick Start Guide
 description: Get up and running with ODUS in 5 minutes
-version: 1.4.0
+version: 1.0.0-beta
 last_updated: 2026-01-19
 ---
 
 ![Angular](https://img.shields.io/badge/Angular-21.1-dd0031?style=flat-square&logo=angular)
-![AI](https://img.shields.io/badge/AI-Gemini_2.0_Flash-8e75b2?style=flat-square&logo=google-gemini)
-![Version](https://img.shields.io/badge/Version-1.4.0-success?style=flat-square)
+![AI](https://img.shields.io/badge/AI-Provider_Agnostic-8e75b2?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.0.0--beta-success?style=flat-square)
 
 ## Prerequisites
 
@@ -15,7 +15,7 @@ Before starting, ensure you have:
 
 - **Node.js 18+** ([Download](https://nodejs.org/))
 - **Modern Browser** (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)
-- **Gemini API Key** ([Get Free Key](https://makersuite.google.com/app/apikey))
+- **AI Provider Key** (Gemini/OpenAI/Anthropic/OpenRouter/Ollama). See Settings → API Configuration in-app.
 - (Optional) **GitHub Personal Access Token** for repository import
 
 ## Installation

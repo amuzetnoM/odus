@@ -1,7 +1,7 @@
 ---
 title: Deployment Guide
 description: Production deployment instructions for multiple platforms
-version: 1.4.0
+version: 1.0.0-beta
 last_updated: 2026-01-19
 ---
 

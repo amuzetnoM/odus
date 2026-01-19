@@ -1,13 +1,13 @@
 ---
 title: API Reference
 description: Complete TypeScript API documentation for services and components
-version: 1.4.0
+version: 1.0.0-beta
 last_updated: 2026-01-19
 ---
 
 ![API](https://img.shields.io/badge/API-Documentation-blue?style=flat-square)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?style=flat-square&logo=typescript)
-![Version](https://img.shields.io/badge/Version-1.4.0-green?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.0.0--beta-green?style=flat-square)
 
 ## Core Services API
 

@@ -15,7 +15,7 @@ type SettingsTab = 'recurring' | 'automation';
   template: `
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" (click)="close.emit()">
       <div 
-        class="w-full max-w-4xl bg-zinc-950/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl flex flex-col h-[85vh] overflow-hidden"
+        class="w-full max-w-6xl bg-zinc-950/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl flex flex-col h-[92vh] overflow-auto"
         (click)="$event.stopPropagation()">
         
         <!-- Header -->

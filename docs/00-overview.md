@@ -1,7 +1,7 @@
 ---
 title: ODUS Overview
 description: AI-native project management platform with local-first architecture
-version: 1.4.0
+version: 1.0.0-beta
 last_updated: 2026-01-19
 author: ODUS Team
 ---
@@ -9,7 +9,7 @@ author: ODUS Team
 ![Angular](https://img.shields.io/badge/Angular-21.1-dd0031?style=flat-square&logo=angular)
 ![AI](https://img.shields.io/badge/AI-Gemini_2.0_Flash-8e75b2?style=flat-square&logo=google-gemini)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?style=flat-square&logo=typescript)
-![Version](https://img.shields.io/badge/Version-1.4.0-success?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.0.0--beta-success?style=flat-square)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-gray?style=flat-square)
 
