@@ -482,11 +482,31 @@ export class TaskDetailComponent {
   }
 
   parseMarkdown(text: string): string {
-      return text
-          .replace(/\*\*(.*)\*\*/gim, '<strong class="text-white font-bold">$1</strong>')
-          .replace(/_(.*)_/gim, '<em class="text-zinc-400 italic">$1</em>')
-          .replace(/`(.*)`/gim, '<code class="bg-zinc-800 text-zinc-300 px-1 rounded font-mono text-xs">$1</code>')
-          .replace(/^\- (.*$)/gim, '<li class="ml-4 list-disc text-zinc-300 mb-1">$1</li>')
-          .replace(/\n/gim, '<br />');
+      if (!text) return '';
+      
+      let html = text
+          // Headers
+          .replace(/^### (.*$)/gim, '<h3 class="text-lg font-medium text-white mb-2 mt-4">$1</h3>')
+          .replace(/^## (.*$)/gim, '<h2 class="text-xl font-light text-white mb-3 mt-6">$1</h2>')
+          .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-light text-white mb-4 mt-6 border-b border-white/10 pb-2">$1</h1>')
+          // Bold and Italic
+          .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>')
+          .replace(/\*(.*?)\*/g, '<em class="text-zinc-400 italic">$1</em>')
+          .replace(/_(.*?)_/g, '<em class="text-zinc-400 italic">$1</em>')
+          // Code
+          .replace(/`(.*?)`/g, '<code class="bg-zinc-800 text-zinc-300 px-1 rounded font-mono text-xs">$1</code>')
+          // Lists
+          .replace(/^\s*[-*+] (.*$)/gim, '<li class="ml-4 list-disc text-zinc-300 mb-1">$1</li>')
+          .replace(/^\s*\d+\. (.*$)/gim, '<li class="ml-4 list-decimal text-zinc-300 mb-1">$1</li>')
+          // Line breaks
+          .replace(/\n\n/g, '</p><p class="mb-3">')
+          .replace(/\n/g, '<br />');
+      
+      // Wrap in paragraph if not already wrapped
+      if (!html.startsWith('<')) {
+          html = '<p class="mb-3">' + html + '</p>';
+      }
+      
+      return html;
   }
 }

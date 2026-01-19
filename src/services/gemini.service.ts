@@ -399,13 +399,33 @@ export class GeminiService {
 
   async getDailyBriefing(dayTasks: any, metrics: any): Promise<DayBriefing> {
     const prompt = `
-      Analyze workload.
-      Metrics: ${JSON.stringify(metrics)}
-      Today: ${JSON.stringify(dayTasks)}
+      Analyze today's workload and provide a structured briefing.
+      
+      Workspace Metrics: ${JSON.stringify(metrics)}
+      Today's Tasks:
+      - Starting: ${dayTasks.starting?.length || 0} tasks
+      - Due: ${dayTasks.due?.length || 0} tasks  
+      - Ongoing: ${dayTasks.ongoing?.length || 0} tasks
+      
+      Tasks Detail: ${JSON.stringify(dayTasks)}
+      
+      Provide a clear, structured briefing with:
+      1. A concise overview sentence
+      2. Key priorities for the day (if any high-priority tasks)
+      3. A brief recommendation or insight
+      
+      Format the briefing as a single paragraph with proper structure, using 2-4 sentences. Be professional and actionable.
       
       Return JSON: { "briefing": "string", "dayType": "FOCUS" | "CRUNCH" | "BALANCED" | "LIGHT" | "REST" }
+      
+      dayType definitions:
+      - FOCUS: 1-3 high-priority tasks, manageable workload
+      - CRUNCH: 4+ tasks or multiple high-priority items
+      - BALANCED: Mix of priorities, moderate load
+      - LIGHT: Few tasks, mostly low priority
+      - REST: No tasks or all completed
     `;
-    const system = "You are an executive assistant. Be concise.";
+    const system = "You are an executive assistant providing daily briefings. Be clear, concise, and actionable.";
     
     try {
         const text = await this.generateText(prompt, system, this.provider === 'gemini' ? {
@@ -418,7 +438,7 @@ export class GeminiService {
         
         return JSON.parse(this.cleanJson(text));
     } catch (e) {
-        return { briefing: "Unable to analyze schedule.", dayType: "BALANCED" };
+        return { briefing: "Unable to analyze schedule at this time.", dayType: "BALANCED" };
     }
   }
 

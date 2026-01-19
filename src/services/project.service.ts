@@ -148,6 +148,7 @@ export class ProjectService {
    * - Strips markdown-like tokens from titles
    * - Moves overflow / trailing content from long titles into description
    * - Truncates long titles to a sensible limit
+   * - Validates and normalizes dates
    */
   private normalizeTask(input: Partial<Task>): Partial<Task> {
       const out: Partial<Task> = { ...input };
@@ -197,8 +198,38 @@ export class ProjectService {
 
       out.title = title || 'Untitled Task';
       out.description = description || out.description || '';
+      
+      // Validate and normalize dates
+      out.startDate = this.validateDate(out.startDate);
+      out.endDate = this.validateDate(out.endDate);
+      
+      // Ensure endDate >= startDate
+      if (out.startDate && out.endDate && out.endDate < out.startDate) {
+          // Swap them or set endDate to startDate + 1 day
+          const start = new Date(out.startDate);
+          const end = new Date(start);
+          end.setDate(start.getDate() + 1);
+          out.endDate = end.toISOString().split('T')[0];
+      }
 
       return out;
+  }
+  
+  /**
+   * Validate and normalize date to YYYY-MM-DD format
+   */
+  private validateDate(dateStr: string | undefined): string | undefined {
+      if (!dateStr) return undefined;
+      
+      try {
+          const date = new Date(dateStr);
+          if (isNaN(date.getTime())) return undefined;
+          
+          // Return in YYYY-MM-DD format
+          return date.toISOString().split('T')[0];
+      } catch {
+          return undefined;
+      }
   }
 
   private checkDeadlines() {
