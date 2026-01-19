@@ -79,31 +79,44 @@ Every task, project, and mind node has **rich metadata**:
 ### What ODUS Can Do Right Now
 
 **Project Management**
-- ✅ Create projects from natural language prompts
-- ✅ Import GitHub repositories and generate actionable tasks
-- ✅ Manage task dependencies with automatic scheduling
-- ✅ Track progress with real-time metrics (health, completion rate)
-- ✅ Visualize critical paths with weighted algorithms
+- Create projects from natural language prompts
+- Import GitHub repositories and generate actionable tasks
+- Manage task dependencies with automatic scheduling
+- Track progress with real-time metrics (health, completion rate)
+- Visualize critical paths with weighted algorithms
+- Time tracking with timer, logs, and velocity metrics
+- Template library with 6 pre-built project templates
+- Recurring tasks (daily, weekly, monthly)
+- Task automation via rules engine
 
 **AI-Powered Automation**
-- ✅ Curate focus lists (top 5 tasks) automatically
-- ✅ Route tasks to correct projects via NLP
-- ✅ Generate CSV/Markdown files on demand
-- ✅ Analyze project risks and provide recommendations
-- ✅ Daily briefings with structured insights
+- Curate focus lists (top 5 tasks) automatically
+- Route tasks to correct projects via NLP
+- Generate CSV/Markdown files on demand
+- Analyze project risks and provide recommendations
+- Daily briefings with structured insights
+- Predictive AI for risk detection and smart scheduling
+- Missing task detection and bottleneck identification
 
 **Knowledge Management**
-- ✅ Force-directed mind map with AI linking
-- ✅ Markdown editing with live preview
-- ✅ Bidirectional task-to-mind-node linking
-- ✅ Property-based semantic search
+- Force-directed mind map with AI linking
+- Markdown editing with live preview
+- Bidirectional task-to-mind-node linking
+- Property-based semantic search
+- File preview for PDF, images, and text files
 
 **Visualization**
-- ✅ Kanban boards with drag-and-drop
-- ✅ Gantt charts with timeline views
-- ✅ Dependency graphs (force-directed)
-- ✅ Success roadmap (critical path)
-- ✅ Calendar with daily briefings
+- Kanban boards with drag-and-drop
+- Gantt charts with timeline views
+- Dependency graphs (force-directed)
+- Success roadmap (critical path)
+- Calendar with daily briefings
+- Advanced analytics dashboard with burndown and velocity charts
+
+**Integrations**
+- GitHub bi-directional sync (push updates to issues)
+- GitHub Projects integration for board synchronization
+- Export to CSV/Markdown formats
 
 ## What ODUS Is Missing (Push to Limits)
 

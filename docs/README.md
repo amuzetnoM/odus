@@ -17,7 +17,7 @@ last_updated: 2026-01-19
 
 ---
 
-## 📚 Documentation Structure
+## Documentation Structure
 
 ### Getting Started
 
@@ -33,7 +33,7 @@ last_updated: 2026-01-19
 
 ---
 
-## 🚀 Quick Links
+## Quick Links
 
 ### For Users
 - **First Time?** → [Quick Start Guide](./01-quick-start.md)
@@ -47,7 +47,7 @@ last_updated: 2026-01-19
 
 ---
 
-## 📖 Documentation Highlights
+## Documentation Highlights
 
 ### What Makes ODUS Unique
 
@@ -59,12 +59,21 @@ last_updated: 2026-01-19
 
 ### Core Capabilities
 
-✅ **AI Project Generation** - Natural language → complete project boards  
-✅ **GitHub Import** - Analyze repos → categorized tasks with dependencies  
-✅ **Focus List Curation** - AI selects top 5 most important tasks  
-✅ **Mind Map** - Force-directed knowledge graph with auto-linking  
-✅ **Conversational Agent** - Full workspace control via chat interface  
-✅ **Multi-View Boards** - Kanban, Gantt, dependency graphs, calendar  
+**AI Project Generation** - Natural language to complete project boards  
+**GitHub Import** - Analyze repos to categorized tasks with dependencies  
+**Focus List Curation** - AI selects top 5 most important tasks  
+**Mind Map** - Force-directed knowledge graph with auto-linking  
+**Conversational Agent** - Full workspace control via chat interface  
+**Multi-View Boards** - Kanban, Gantt, dependency graphs, calendar  
+**Time Tracking** - Timer, logs, and velocity metrics  
+**Template Library** - 6 pre-built project templates  
+**Recurring Tasks** - Daily, weekly, monthly task automation  
+**Task Automation** - Rules engine with trigger-condition-action  
+**File Preview** - View PDF, images, text files in-app  
+**Advanced Analytics** - Burndown, velocity, completion rate charts  
+**Predictive AI** - Risk detection, smart scheduling, bottleneck identification  
+**GitHub Bi-Sync** - Push updates to GitHub issues  
+**GitHub Projects** - Integrate with GitHub Projects boards  
 
 ### Tech Stack
 
@@ -76,7 +85,7 @@ last_updated: 2026-01-19
 
 ---
 
-## 🔍 Documentation Navigation
+## Documentation Navigation
 
 ### By Topic
 
@@ -113,7 +122,7 @@ last_updated: 2026-01-19
 
 ---
 
-## 💡 Quick Examples
+## Quick Examples
 
 ### Create AI Project
 
@@ -156,7 +165,7 @@ last_updated: 2026-01-19
 
 ---
 
-## 🎯 Common Use Cases
+## Common Use Cases
 
 ### Daily Standup
 
@@ -184,7 +193,7 @@ last_updated: 2026-01-19
 
 ---
 
-## 🛠️ Development
+## Development
 
 ### Local Development
 
@@ -213,16 +222,25 @@ npm run test:e2e    # E2E tests (Playwright)
 
 ---
 
-## 📊 Version History
+## Version History
 
 ### v1.4.0 (Current)
-- ✅ Enhanced GitHub import with file categorization
-- ✅ Improved success roadmap algorithm (weighted scoring)
-- ✅ AI focus list curation
-- ✅ Task-to-mind-node linking
-- ✅ Date validation and normalization
-- ✅ Markdown rendering improvements
-- ✅ Code quality refactoring (shared utilities)
+- Enhanced GitHub import with file categorization
+- Improved success roadmap algorithm (weighted scoring)
+- AI focus list curation
+- Task-to-mind-node linking
+- Date validation and normalization
+- Markdown rendering improvements
+- Code quality refactoring (shared utilities)
+- Time tracking with timer and velocity metrics (NEW)
+- Template library with 6 pre-built templates (NEW)
+- Recurring tasks (daily/weekly/monthly) (NEW)
+- Task automation via rules engine (NEW)
+- File preview for PDF/images/text (NEW)
+- Advanced analytics dashboard (NEW)
+- Predictive AI for risk detection (NEW)
+- GitHub bi-directional sync (NEW)
+- GitHub Projects integration (NEW)
 
 ### v1.3.0
 - Theme customization (dark/light modes)
@@ -250,7 +268,7 @@ npm run test:e2e    # E2E tests (Playwright)
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! See our [GitHub repository](https://github.com/amuzetnoM/ODUS) for:
 
@@ -260,13 +278,13 @@ We welcome contributions! See our [GitHub repository](https://github.com/amuzetn
 
 ---
 
-## 📄 License
+## License
 
 MIT License - See [LICENSE](../LICENSE) file
 
 ---
 
-## 🔗 Resources
+## Resources
 
 - **GitHub**: [amuzetnoM/ODUS](https://github.com/amuzetnoM/ODUS)
 - **Documentation**: `/docs` directory
@@ -275,6 +293,6 @@ MIT License - See [LICENSE](../LICENSE) file
 
 ---
 
-**Built with ❤️ using Angular 21, Gemini AI, and local-first architecture.**
+**Built with care using Angular 21, Gemini AI, and local-first architecture.**
 
 Last Updated: 2026-01-19 | Version 1.4.0

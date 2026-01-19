@@ -519,10 +519,10 @@ dist/
 
 | Platform | Config | CDN | SSL | Cost |
 |----------|--------|-----|-----|------|
-| **Vercel** | `vercel.json` | ✅ | ✅ | Free |
-| **GCloud** | `app.yaml` | ✅ | ✅ | ~$5/mo |
-| **Netlify** | `netlify.toml` | ✅ | ✅ | Free |
-| **GitHub Pages** | Branch | ❌ | ✅ | Free |
+| **Vercel** | `vercel.json` | Yes | Yes | Free |
+| **GCloud** | `app.yaml` | Yes | Yes | ~$5/mo |
+| **Netlify** | `netlify.toml` | Yes | Yes | Free |
+| **GitHub Pages** | Branch | No | Yes | Free |
 
 ## Extensibility Points
 

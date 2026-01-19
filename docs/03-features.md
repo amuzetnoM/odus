@@ -11,7 +11,462 @@ last_updated: 2026-01-19
 
 ## Core Features Overview
 
-### 1. AI-Powered Project Generation
+### 1. Time Tracking System
+
+**Comprehensive Time Management**: Track time spent on every task with built-in timer and session logging.
+
+**Features**:
+- **Start/Stop Timer**: One-click time tracking with live elapsed time display (HH:MM:SS format)
+- **Session Logging**: Multiple time sessions per task with start/end timestamps
+- **Cumulative Tracking**: Automatic calculation of total time across all sessions
+- **Session History**: View all past sessions with notes and durations
+- **Velocity Metrics**: Calculate hours completed per week for sprint planning
+- **Estimates vs. Actuals**: Compare estimated time with actual time spent
+- **Accuracy Tracking**: Performance metrics for estimation improvement
+
+**Data Model**:
+```typescript
+interface TimeTracking {
+  estimate?: number;        // Estimated hours
+  actualTime: number;       // Accumulated hours
+  sessions: TimeSession[];  // All tracking sessions
+  startedAt?: string;       // Current session start
+}
+```
+
+**Integration**:
+- Embedded in task detail modal
+- Displayed on task cards
+- Used for velocity calculations
+- Feeds into analytics dashboard
+
+### 2. Template Library
+
+**Pre-Built Project Templates**: 6 professionally designed templates for common workflows.
+
+**Available Templates**:
+
+1. **SaaS Product Launch** (12 tasks)
+   - Market research and validation
+   - MVP development phases
+   - Beta testing workflow
+   - Launch and marketing
+   - Post-launch monitoring
+
+2. **Mobile App Development** (10 tasks)
+   - Project setup and architecture
+   - UI/UX design phases
+   - Feature implementation
+   - Testing and QA
+   - App store deployment
+
+3. **Content Marketing Calendar** (8 tasks)
+   - Strategy and planning
+   - Content creation workflow
+   - Distribution channels
+   - Analytics and optimization
+
+4. **Wedding Planning** (18 tasks)
+   - Budget and venue
+   - Vendors and contracts
+   - Invitations and RSVPs
+   - Day-of coordination
+   - Post-wedding tasks
+
+5. **Home Renovation** (14 tasks)
+   - Planning and design
+   - Permits and approvals
+   - Construction phases
+   - Cleanup and final touches
+
+6. **Research Project** (10 tasks)
+   - Literature review
+   - Methodology design
+   - Data collection
+   - Analysis and writing
+   - Publication process
+
+**Features**:
+- Category-based filtering (Software, Marketing, Personal, Creative, Business)
+- One-click project creation
+- Pre-configured dependencies
+- Realistic time estimates
+- Priority distribution
+- Customizable after creation
+
+**Usage**:
+1. Click "New from Template" button
+2. Browse by category or view all
+3. Select template
+4. Customize project name and dates
+5. Generate project with all tasks
+
+### 3. Recurring Tasks
+
+**Automated Task Repetition**: Create tasks that repeat on daily, weekly, or monthly schedules.
+
+**Frequency Options**:
+- **Daily**: Every N days (e.g., every 1 day, every 3 days)
+- **Weekly**: Select specific days of week (Monday through Sunday)
+- **Monthly**: Select day of month (1st through 31st)
+
+**Configuration**:
+- **Interval**: How often to repeat (e.g., every 2 weeks)
+- **Days of Week**: For weekly tasks, select specific days
+- **Day of Month**: For monthly tasks, choose date
+- **End Date**: Optional stop date for recurrence
+- **Auto-Generation**: Background service creates instances automatically
+
+**How It Works**:
+1. Configure recurrence in task detail modal
+2. Background service checks hourly for due recurrences
+3. New task instance created automatically when due
+4. Instance links to parent task
+5. Original task tracks last generation timestamp
+
+**Use Cases**:
+- Daily standups
+- Weekly planning sessions
+- Monthly reports
+- Quarterly reviews
+- Annual compliance tasks
+
+### 4. Task Automation (Rules Engine)
+
+**Workflow Automation**: Create custom rules with trigger-condition-action patterns.
+
+**Rule Components**:
+
+**Triggers**:
+- Task status changed (todo/in-progress/done)
+- Task created
+- Due date approaching
+- Priority changed
+- Task completed
+
+**Conditions**:
+- Status equals/not equals
+- Priority level matches
+- Has specific tags
+- Due within timeframe
+- Assigned to specific project
+
+**Actions**:
+- Create follow-up task
+- Update task properties
+- Add to focus list
+- Send notification
+- Archive task
+- Create mind node
+
+**Pre-Built Rule Templates**:
+1. "Create review task when done" - Auto-creates "Review: [title]" task
+2. "Add high-priority to focus" - Automatically adds high-priority tasks to focus list
+3. "Alert on due date" - Notification 1 day before due date
+4. "Auto-archive completed" - Archives tasks 30 days after completion
+5. "Dependency alert" - Notifies when blocking task is completed
+
+**Visual Rule Builder**:
+- Drag-and-drop interface
+- Template selection
+- Custom rule creation
+- Enable/disable toggle
+- Rule execution log
+
+**Example Rules**:
+```typescript
+// When task marked done, create review task
+{
+  trigger: { type: 'task_status_changed' },
+  conditions: [{ field: 'status', operator: 'equals', value: 'done' }],
+  actions: [{ 
+    type: 'create_task', 
+    params: { 
+      title: 'Review: {{original.title}}',
+      priority: 'medium',
+      dueDate: '{{7_days_from_now}}'
+    }
+  }]
+}
+```
+
+### 5. File Preview System
+
+**In-App File Viewing**: View files without downloading, with support for multiple formats.
+
+**Supported Formats**:
+
+**Images**:
+- PNG, JPG, JPEG, GIF, SVG
+- Rendered in modal with zoom controls
+- High-resolution support
+
+**PDF Documents**:
+- Embedded viewer via iframe
+- Secure blob URL rendering
+- Scroll and zoom support
+- No external dependencies
+
+**Text Files**:
+- Plain text (.txt)
+- Markdown (.md) with rendering
+- Code files with syntax highlighting
+- JSON with formatting
+
+**Security**:
+- Blob URL generation for isolation
+- Sanitized content rendering
+- XSS prevention
+- Memory cleanup after viewing
+
+**Interface**:
+- Modal preview window
+- File type detection
+- Fallback to download for unsupported types
+- Close/download buttons
+- Keyboard navigation (Escape to close)
+
+### 6. Advanced Analytics Dashboard
+
+**Data-Driven Insights**: Comprehensive analytics with multiple chart types.
+
+**Chart Types**:
+
+**1. Burndown Chart**:
+- Sprint progress visualization
+- Ideal vs. actual completion rate
+- Daily task completion tracking
+- Scope change indicators
+- Completion projection
+
+**2. Velocity Chart**:
+- Hours completed per week
+- Trend analysis over time
+- Rolling averages
+- Capacity planning
+- Sprint comparison
+
+**3. Completion Rate Chart**:
+- Percentage done over time
+- Project health indicators
+- Milestone tracking
+- Historical performance
+- Trend predictions
+
+**4. Time Accuracy Chart**:
+- Estimate vs. actual comparison
+- Accuracy percentage by task
+- Improvement trends
+- Outlier identification
+- Estimation calibration
+
+**5. Task Distribution Analysis**:
+- Priority distribution
+- Status breakdown
+- Tag-based grouping
+- Project comparison
+- Dependency depth
+
+**Metrics Calculated**:
+- Total tasks completed
+- Average completion time
+- Velocity (tasks/week or hours/week)
+- Estimation accuracy
+- Project health score
+- Critical path length
+- Bottleneck count
+
+**Usage**:
+- Access via Analytics view in sidebar
+- Filter by project, date range, or tags
+- Export charts as PNG
+- Download raw data as CSV
+- Share via link
+
+### 7. Predictive AI Features
+
+**AI-Powered Project Intelligence**: Analyze risks, optimize schedules, and detect issues.
+
+**Capabilities**:
+
+**Risk Detection**:
+- Missing critical tasks (testing, QA, documentation)
+- Overloaded project phases (too many parallel tasks)
+- Unrealistic timelines (insufficient time between tasks)
+- Missing dependencies (should-depend-on relationships)
+- Bottleneck tasks (blocking many dependents)
+- Scope creep indicators
+- Resource conflicts
+
+**Risk Scoring**:
+```typescript
+Risk Score = 0-10 scale
+0-3: Low risk (healthy project)
+4-6: Medium risk (needs attention)
+7-10: High risk (immediate action required)
+```
+
+**Smart Scheduling**:
+- Optimal start date suggestions
+- Dependency-aware scheduling
+- Load balancing (max 8 hours/day)
+- Buffer time recommendations
+- Critical path optimization
+- Resource leveling
+
+**Missing Task Detection**:
+- Analyzes project type and context
+- Identifies commonly overlooked tasks
+- Suggests additions with rationale
+- Examples:
+  - Software: Unit tests, integration tests, code review, deployment scripts
+  - Marketing: Analytics setup, A/B testing, performance metrics
+  - Personal: Buffer time, contingency planning, review sessions
+
+**Bottleneck Identification**:
+- Tasks blocking multiple dependents
+- Long-duration critical tasks
+- Resource conflicts
+- Dependency chains analysis
+- Recommendations for parallelization
+
+**Timeline Optimization**:
+- Analyzes current schedule
+- Suggests reordering for efficiency
+- Identifies float time opportunities
+- Recommends dependency adjustments
+- Predicts completion dates
+
+**UI Integration**:
+- Risk score badge on project cards
+- Warning icons for high-risk tasks
+- Alerts panel in dashboard
+- Recommendations in AI agent chat
+- Automated suggestions on project creation
+
+### 8. GitHub Bi-Directional Sync
+
+**Seamless GitHub Integration**: Push ODUS changes to GitHub issues and sync bidirectionally.
+
+**Capabilities**:
+
+**Push to GitHub**:
+- Create GitHub issue from ODUS task
+- Update issue when task changes (title, description, status, priority)
+- Close issue when task marked done
+- Sync labels based on task tags
+- Add comments to issues
+- Link to milestones
+
+**Sync from GitHub**:
+- Import issue changes back to ODUS
+- Update task when issue edited
+- Mark task done when issue closed
+- Sync labels to tags
+- Import issue comments
+- Track issue events
+
+**Data Mapping**:
+```typescript
+ODUS Task → GitHub Issue
+- title → issue title
+- description → issue body
+- status (done) → issue state (closed)
+- priority → issue labels (priority: high/medium/low)
+- tags → issue labels
+- comments → issue comments
+```
+
+**Sync Status Indicators**:
+- Synced (green checkmark)
+- Syncing (spinner)
+- Conflict (warning icon)
+- Manual review needed (alert)
+
+**Conflict Resolution**:
+- Last-write-wins by default
+- Manual resolution option
+- Conflict history log
+- Rollback capability
+
+**Configuration**:
+1. Link task to GitHub repo
+2. Choose sync direction (one-way or bidirectional)
+3. Map fields (optional custom mapping)
+4. Enable auto-sync
+5. Monitor sync status
+
+**Usage**:
+- Click "Sync to GitHub" button in task detail
+- Automatic sync on task changes (if enabled)
+- View GitHub issue number and link
+- Access issue directly from ODUS
+- Sync status in task card
+
+### 9. GitHub Projects Integration
+
+**Project Board Synchronization**: Connect ODUS projects to GitHub Projects (Beta).
+
+**Features**:
+
+**Project Linking**:
+- Link ODUS project to GitHub Project board
+- Support for both Classic and Beta Projects
+- One-to-one or one-to-many mapping
+- Project-level sync settings
+
+**Item Synchronization**:
+- Create GitHub project items from ODUS tasks
+- Sync task status to project board columns
+- Update custom fields
+- Preserve project-specific metadata
+- Bidirectional updates
+
+**Column Mapping**:
+```typescript
+ODUS Status → GitHub Project Column
+- todo → To Do / Backlog
+- in-progress → In Progress
+- done → Done / Completed
+```
+
+**Custom Field Support**:
+- Priority mapping
+- Tags as labels
+- Due dates
+- Assignees
+- Custom text/number fields
+- Single-select fields
+
+**Sync Options**:
+- Real-time sync (on every change)
+- Batch sync (hourly/daily)
+- Manual sync only
+- One-way vs. bidirectional
+- Conflict resolution strategy
+
+**Project Views**:
+- Table view sync
+- Board view sync
+- Roadmap view integration
+- Custom view support
+
+**Configuration UI**:
+1. Select ODUS project
+2. Authenticate with GitHub
+3. Choose GitHub Project
+4. Map columns and fields
+5. Set sync frequency
+6. Enable sync
+
+**Benefits**:
+- Keep both systems in sync
+- Use ODUS for AI features, GitHub for collaboration
+- Single source of truth
+- Reduced manual data entry
+- Team visibility
+
+### AI-Powered Project Generation
 
 **Natural Language Input**: Describe your goal, get a complete project board.
 
