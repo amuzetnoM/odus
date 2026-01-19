@@ -1,7 +1,7 @@
 
 import { Injectable, signal } from '@angular/core';
 
-export type AppView = 'dashboard' | 'calendar' | 'drive' | 'github' | 'projects' | 'mind';
+export type AppView = 'dashboard' | 'calendar' | 'drive' | 'github' | 'projects' | 'mind' | 'analytics';
 
 @Injectable({
   providedIn: 'root'

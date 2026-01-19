@@ -4,8 +4,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProjectService, Task, TaskStatus } from '../services/project.service';
 import { DriveService, DriveFile } from '../services/drive.service';
+import { TimeTrackingService } from '../services/time-tracking.service';
 
-type Tab = 'details' | 'comments';
+type Tab = 'details' | 'comments' | 'time';
 
 @Component({
   selector: 'app-task-detail',
@@ -39,6 +40,9 @@ type Tab = 'details' | 'comments';
                <!-- Tabs Toggle -->
                <div class="bg-zinc-900 p-0.5 rounded-lg border border-white/5 flex mr-4">
                   <button (click)="activeTab.set('details')" [class.bg-zinc-700]="activeTab() === 'details'" class="px-3 py-1 text-xs rounded transition-colors text-zinc-400" [class.text-white]="activeTab() === 'details'">Details</button>
+                  <button (click)="activeTab.set('time')" [class.bg-zinc-700]="activeTab() === 'time'" class="px-3 py-1 text-xs rounded transition-colors text-zinc-400" [class.text-white]="activeTab() === 'time'">
+                     Time <span class="ml-1 opacity-50">{{ formatDuration(totalTime()) }}</span>
+                  </button>
                   <button (click)="activeTab.set('comments')" [class.bg-zinc-700]="activeTab() === 'comments'" class="px-3 py-1 text-xs rounded transition-colors text-zinc-400" [class.text-white]="activeTab() === 'comments'">
                      Discuss <span class="ml-1 opacity-50">{{ task().comments?.length || 0 }}</span>
                   </button>
@@ -272,6 +276,91 @@ type Tab = 'details' | 'comments';
                </div>
            }
            
+           @if (activeTab() === 'time') {
+               <div class="p-6 space-y-6">
+                  <!-- Timer Control -->
+                  <div class="bg-zinc-900/50 border border-white/10 rounded-xl p-6">
+                     <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Time Tracker</h3>
+                        @if (isTimerActive()) {
+                           <div class="flex items-center gap-2">
+                              <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                              <span class="text-xs text-zinc-400">Tracking</span>
+                           </div>
+                        }
+                     </div>
+                     
+                     @if (isTimerActive()) {
+                        <div class="text-center mb-4">
+                           <div class="text-4xl font-light text-white font-mono mb-2">
+                              {{ formatDuration(timeTracking.currentDuration()) }}
+                           </div>
+                           <p class="text-sm text-zinc-400">Active session</p>
+                        </div>
+                        <div class="flex gap-3">
+                           <button 
+                              (click)="stopTimer()"
+                              class="flex-1 px-4 py-3 bg-green-600 hover:bg-green-500 text-white text-sm font-semibold rounded-lg transition-colors">
+                              Stop Timer
+                           </button>
+                           <button 
+                              (click)="cancelTimer()"
+                              class="px-4 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm font-semibold rounded-lg transition-colors">
+                              Cancel
+                           </button>
+                        </div>
+                     } @else {
+                        <button 
+                           (click)="startTimer()"
+                           class="w-full px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2">
+                           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                           </svg>
+                           Start Timer
+                        </button>
+                     }
+                  </div>
+
+                  <!-- Total Time -->
+                  <div class="bg-zinc-900/50 border border-white/10 rounded-xl p-6 text-center">
+                     <div class="text-xs text-zinc-500 uppercase tracking-wider mb-2">Total Time Tracked</div>
+                     <div class="text-3xl font-light text-white">{{ formatDuration(totalTime()) }}</div>
+                  </div>
+
+                  <!-- Time Logs -->
+                  <div class="bg-zinc-900/50 border border-white/10 rounded-xl p-6">
+                     <h3 class="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-4">Activity Log</h3>
+                     <div class="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
+                        @for (log of timeLogs(); track log.id) {
+                           <div class="flex items-center justify-between p-3 bg-zinc-950/30 rounded border border-white/5">
+                              <div>
+                                 <div class="text-sm text-zinc-200">{{ formatDate(log.startTime) }}</div>
+                                 @if (log.description) {
+                                    <div class="text-xs text-zinc-500 mt-1">{{ log.description }}</div>
+                                 }
+                              </div>
+                              <div class="flex items-center gap-3">
+                                 <div class="text-sm text-zinc-300 font-mono">{{ formatDuration(log.duration || 0) }}</div>
+                                 <button 
+                                    (click)="deleteTimeLog(log.id)"
+                                    class="text-zinc-600 hover:text-red-400 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                 </button>
+                              </div>
+                           </div>
+                        } @empty {
+                           <div class="text-center py-12 text-zinc-500 text-sm">
+                              No time logs yet. Start tracking to see activity.
+                           </div>
+                        }
+                     </div>
+                  </div>
+               </div>
+           }
+
            @if (activeTab() === 'comments') {
                <div class="flex flex-col h-full p-6">
                    <div class="flex-1 overflow-y-auto space-y-6 pr-2 mb-4 custom-scrollbar">
@@ -320,6 +409,7 @@ export class TaskDetailComponent {
   
   projectService = inject(ProjectService);
   driveService = inject(DriveService);
+  timeTracking = inject(TimeTrackingService);
 
   activeTab = signal<Tab>('details');
   showPreview = signal(false);
@@ -346,7 +436,6 @@ export class TaskDetailComponent {
       const p = this.project();
       if (!p) return [];
       const currentDeps = this.task().dependencyIds || [];
-      // Exclude self and already linked tasks
       return p.tasks.filter(t => t.id !== this.task().id && !currentDeps.includes(t.id));
   });
 
@@ -360,6 +449,19 @@ export class TaskDetailComponent {
   parsedDescription = computed(() => {
       const raw = this.task().description || '';
       return this.parseMarkdown(raw);
+  });
+
+  timeLogs = computed(() => {
+    return this.timeTracking.getLogsForTask(this.task().id);
+  });
+
+  totalTime = computed(() => {
+    return this.timeTracking.getTotalTimeForTask(this.task().id);
+  });
+
+  isTimerActive = computed(() => {
+    const timer = this.timeTracking.activeTimer();
+    return timer?.taskId === this.task().id;
   });
 
   // --- Actions ---
@@ -508,5 +610,33 @@ export class TaskDetailComponent {
       }
       
       return html;
+  }
+
+  // --- Time Tracking ---
+  startTimer() {
+    this.timeTracking.startTimer(this.task().id, this.projectId(), this.task().title);
+  }
+
+  stopTimer() {
+    this.timeTracking.stopTimer();
+  }
+
+  cancelTimer() {
+    this.timeTracking.cancelTimer();
+  }
+
+  deleteTimeLog(logId: string) {
+    if (confirm('Delete this time log?')) {
+      this.timeTracking.deleteLog(logId);
+    }
+  }
+
+  formatDuration(seconds: number): string {
+    return this.timeTracking.formatDuration(seconds);
+  }
+
+  formatDate(dateStr: string): string {
+    const date = new Date(dateStr);
+    return date.toLocaleString();
   }
 }
