@@ -727,7 +727,7 @@ export class AiAgentComponent implements AfterViewInit, OnDestroy {
                   if (node) {
                       const taskRefs = node.properties?.taskReferences || '';
                       const newRefs = taskRefs ? `${taskRefs},${linkData.taskId}` : linkData.taskId;
-                      await this.mindService.updateNode(linkData.nodeId, {
+                      this.mindService.updateNode(linkData.nodeId, {
                           properties: { ...node.properties, taskReferences: newRefs }
                       });
                       

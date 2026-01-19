@@ -4,6 +4,7 @@ import { NotificationService } from './notification.service';
 import { PersistenceService } from './persistence.service';
 import { AuthService } from './auth.service';
 import { GeminiService } from './gemini.service';
+import { normalizeDate } from '../utils/date-utils';
 
 export type TaskStatus = 'todo' | 'in-progress' | 'done';
 export type Priority = 'low' | 'medium' | 'high';
@@ -200,9 +201,9 @@ export class ProjectService {
       out.title = title || 'Untitled Task';
       out.description = description || out.description || '';
       
-      // Validate and normalize dates
-      out.startDate = this.validateDate(out.startDate);
-      out.endDate = this.validateDate(out.endDate);
+      // Validate and normalize dates using shared utility
+      out.startDate = normalizeDate(out.startDate);
+      out.endDate = normalizeDate(out.endDate);
       
       // Ensure endDate >= startDate
       if (out.startDate && out.endDate && out.endDate < out.startDate) {
@@ -214,23 +215,6 @@ export class ProjectService {
       }
 
       return out;
-  }
-  
-  /**
-   * Validate and normalize date to YYYY-MM-DD format
-   */
-  private validateDate(dateStr: string | undefined): string | undefined {
-      if (!dateStr) return undefined;
-      
-      try {
-          const date = new Date(dateStr);
-          if (isNaN(date.getTime())) return undefined;
-          
-          // Return in YYYY-MM-DD format
-          return date.toISOString().split('T')[0];
-      } catch {
-          return undefined;
-      }
   }
 
   private checkDeadlines() {

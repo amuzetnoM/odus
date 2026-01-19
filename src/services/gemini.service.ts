@@ -34,6 +34,15 @@ const TASK_DURATION = {
   MAX_RANDOM: 6    // Maximum random duration
 } as const;
 
+export interface RepoAnalysisContext {
+  language?: string;
+  stars?: number;
+  pyproject?: string | null;
+  cargoToml?: string | null;
+  goMod?: string | null;
+  filesByType?: Record<string, string[]>;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -500,7 +509,7 @@ export class GeminiService {
 
   // --- Complex Methods (Repo Analysis & Chat) ---
 
-  async analyzeRepoAndPlan(repoName: string, fileStructure: string, commitHistory: string, readme: string | null, packageJson: string | null, additionalContext?: any): Promise<Task[]> {
+  async analyzeRepoAndPlan(repoName: string, fileStructure: string, commitHistory: string, readme: string | null, packageJson: string | null, additionalContext?: RepoAnalysisContext): Promise<Task[]> {
       const languageInfo = additionalContext?.language ? `\nPrimary Language: ${additionalContext.language}` : '';
       const projectConfig = additionalContext?.pyproject || additionalContext?.cargoToml || additionalContext?.goMod || '';
       const popularityInfo = additionalContext?.stars ? `\nRepository Stars: ${additionalContext.stars}` : '';

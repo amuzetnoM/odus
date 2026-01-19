@@ -7,6 +7,16 @@ import { GeminiService } from '../../services/gemini.service';
 import { PersistenceService } from '../../services/persistence.service';
 import { ProjectService } from '../../services/project.service';
 
+// File categorization patterns
+const FILE_PATTERNS = {
+  SOURCE: /\.(ts|js|tsx|jsx|py|java|go|rs|cpp|c|cs)$/,
+  TEST: /(test|spec|__tests__|tests)\//i,
+  TEST_FILE: /\.(test|spec)\.(ts|js|tsx|jsx|py)$/,
+  CONFIG: /\.(json|yaml|yml|toml|xml|conf|config|env)$/,
+  DOCS: /\.(md|txt|rst|adoc)$/i,
+  DOCS_DIR: /(docs?|documentation)\//i
+} as const;
+
 @Component({
   selector: 'app-github-view',
   standalone: true,
@@ -337,13 +347,13 @@ export class GithubViewComponent {
           
           treeData.tree.filter((t: any) => t.type === 'blob').forEach((t: any) => {
               const path = t.path;
-              if (path.match(/\.(ts|js|tsx|jsx|py|java|go|rs|cpp|c|cs)$/)) {
+              if (FILE_PATTERNS.SOURCE.test(path)) {
                   filesByType.source.push(path);
-              } else if (path.match(/(test|spec|__tests__|tests)\//i) || path.match(/\.(test|spec)\.(ts|js|tsx|jsx|py)$/)) {
+              } else if (FILE_PATTERNS.TEST.test(path) || FILE_PATTERNS.TEST_FILE.test(path)) {
                   filesByType.test.push(path);
-              } else if (path.match(/\.(json|yaml|yml|toml|xml|conf|config|env)$/)) {
+              } else if (FILE_PATTERNS.CONFIG.test(path)) {
                   filesByType.config.push(path);
-              } else if (path.match(/\.(md|txt|rst|adoc)$/i) || path.match(/(docs?|documentation)\//i)) {
+              } else if (FILE_PATTERNS.DOCS.test(path) || FILE_PATTERNS.DOCS_DIR.test(path)) {
                   filesByType.docs.push(path);
               } else {
                   filesByType.other.push(path);

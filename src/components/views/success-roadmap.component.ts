@@ -4,6 +4,13 @@ import { CommonModule } from '@angular/common';
 import { ProjectService, Task } from '../../services/project.service';
 import * as d3 from 'd3';
 
+// Critical Path Configuration Constants
+const CRITICAL_PATH_CONFIG = {
+  MAX_TASKS: 8,            // Maximum number of tasks in critical path
+  MIN_TASKS: 3,            // Minimum number of tasks in critical path
+  PERCENTAGE_OF_TOTAL: 0.3 // Target 30% of all tasks in critical path
+} as const;
+
 @Component({
   selector: 'app-success-roadmap',
   standalone: true,
@@ -146,7 +153,12 @@ export class SuccessRoadmapComponent implements OnDestroy {
         // Select top weighted tasks for critical path
         const sortedByWeight = [...taskWeights.entries()]
             .sort((a, b) => b[1] - a[1])
-            .slice(0, Math.min(8, Math.max(3, Math.ceil(activeTasks.length * 0.3))));
+            .slice(0, Math.min(
+                CRITICAL_PATH_CONFIG.MAX_TASKS, 
+                Math.max(CRITICAL_PATH_CONFIG.MIN_TASKS, 
+                    Math.ceil(activeTasks.length * CRITICAL_PATH_CONFIG.PERCENTAGE_OF_TOTAL)
+                )
+            ));
         
         sortedByWeight.forEach(([id]) => criticalSet.add(id));
         

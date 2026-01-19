@@ -3,6 +3,7 @@ import { Component, inject, computed, signal, ChangeDetectionStrategy, effect } 
 import { CommonModule } from '@angular/common';
 import { ProjectService, Task } from '../../services/project.service';
 import { GeminiService, DayBriefing } from '../../services/gemini.service';
+import { isValidDate } from '../../utils/date-utils';
 
 @Component({
   selector: 'app-calendar-view',
@@ -222,13 +223,6 @@ export class CalendarViewComponent {
     
     const taskMap = new Map<string, {starting: any[], due: any[]}>();
     const tasks = this.projectService.allTasks();
-    
-    // Validate and normalize dates
-    const isValidDate = (dateStr: string | undefined): boolean => {
-        if (!dateStr) return false;
-        const date = new Date(dateStr);
-        return !isNaN(date.getTime()) && !!dateStr.match(/^\d{4}-\d{2}-\d{2}$/);
-    };
     
     for (const t of tasks) {
         if (t.startDate && isValidDate(t.startDate)) {

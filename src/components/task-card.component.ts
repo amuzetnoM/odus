@@ -2,6 +2,7 @@
 import { Component, input, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Task } from '../services/project.service';
+import { MS_PER_DAY } from '../utils/date-utils';
 
 @Component({
   selector: 'app-task-card',
@@ -107,7 +108,7 @@ export class TaskCardComponent {
     if (!endDate || this.isOverdue()) return false;
     const today = new Date();
     const due = new Date(endDate);
-    const daysUntilDue = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const daysUntilDue = Math.ceil((due.getTime() - today.getTime()) / MS_PER_DAY);
     return daysUntilDue <= 3 && daysUntilDue >= 0 && this.task().status !== 'done';
   });
 
