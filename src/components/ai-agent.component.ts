@@ -8,6 +8,8 @@ import { DriveService } from '../services/drive.service';
 import { AuthService } from '../services/auth.service';
 import { AppControlService, AppView } from '../services/app-control.service';
 import { NotificationService } from '../services/notification.service';
+import { WorkspaceService } from '../services/workspace.service';
+import { MindService } from '../services/mind.service';
 import { Content } from '@google/genai';
 
 interface ChatMessage {
@@ -193,6 +195,8 @@ export class AiAgentComponent implements AfterViewInit, OnDestroy {
   authService = inject(AuthService);
   appControlService = inject(AppControlService);
   notificationService = inject(NotificationService);
+  workspaceService = inject(WorkspaceService);
+  mindService = inject(MindService);
   zone = inject(NgZone);
   
   isOpen = signal(false);
@@ -540,16 +544,11 @@ export class AiAgentComponent implements AfterViewInit, OnDestroy {
       this.isThinking.set(true);
       this.scrollToBottom();
 
-      // Context construction
+      // Enhanced Context Construction with Workspace Service
       const userName = this.authService.currentUser().name;
-      const context = JSON.stringify({
-          userName,
-          openTasks: this.projectService.allTasks()
-              .filter(t => t.status !== 'done')
-              .map(t => ({ id: t.id, title: t.title, project: t.projectTitle })),
-          projects: this.projectService.projects().map(p => ({ id: p.id, title: p.title })),
-          files: this.driveService.files().map(f => ({ name: f.name, type: f.type }))
-      });
+      
+      // Get comprehensive workspace context
+      const context = this.workspaceService.getAIContext();
 
       const history: Content[] = this.messages().map(m => ({
           role: m.role as 'user' | 'model',
@@ -558,6 +557,13 @@ export class AiAgentComponent implements AfterViewInit, OnDestroy {
 
       try {
           const result = await this.geminiService.chatWithAgent(text, context, history, userName);
+          
+          // Store AI interaction in memory for future learning
+          await this.workspaceService.storeAIMemory(
+              `User: ${text}`,
+              `Context: ${context.substring(0, 500)}...`,
+              `Response: ${result.text?.substring(0, 200) || 'Tool call'}`
+          );
           
           if (result.toolCall) {
               this.handleToolCall(result.toolCall, result.groundingMetadata);
@@ -578,7 +584,7 @@ export class AiAgentComponent implements AfterViewInit, OnDestroy {
       }
   }
   
-  private handleToolCall(toolCall: { type: string, data: any }, grounding?: any) {
+  private async handleToolCall(toolCall: { type: string, data: any }, grounding?: any) {
       const groundingChunks = grounding?.groundingChunks;
 
       switch(toolCall.type) {
@@ -659,6 +665,23 @@ export class AiAgentComponent implements AfterViewInit, OnDestroy {
               const navData = toolCall.data;
               this.appControlService.navigate(navData.view as AppView);
               this.addModelResponse(`Navigating interface to ${navData.view}.`);
+              break;
+
+          // --- Mind Map Integration ---
+          case 'create_mind_node':
+              const nodeData = toolCall.data;
+              try {
+                  await this.mindService.addNode(nodeData.content);
+                  this.messages.update(p => [...p, {
+                      role: 'model',
+                      text: `Created mind map node.`,
+                      uiType: 'success-card',
+                      uiData: { title: 'Node Added', message: 'Knowledge graph updated.' },
+                      timestamp: new Date()
+                  }]);
+              } catch (e) {
+                  this.addModelResponse('Failed to create mind node.');
+              }
               break;
       }
   }
