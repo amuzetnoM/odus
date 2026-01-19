@@ -257,10 +257,14 @@ export class GeminiService {
         **CRITICAL RULES:**
         1.  **OUTPUT FORMAT IS NON-NEGOTIABLE:** You MUST respond with ONLY a valid JSON object that strictly adheres to the provided schema. Do not add any conversational text, markdown, or explanations before or after the JSON.
         2.  **TASK GRANULARITY:** Generate an exhaustive list of 8 to 15 granular, actionable tasks. Break down high-level concepts into smaller steps.
-        3.  **ALL FIELDS ARE REQUIRED:** For every single task, you MUST provide a value for 'title', 'description', 'status', 'priority', 'tags', 'startOffset', and 'duration'.
+        3.  **ALL FIELDS ARE REQUIRED:** For every single task, you MUST provide a value for 'title', 'description', 'status', 'priority', 'tags', 'startOffset', 'duration', and 'dependsOn'.
         4.  **REALISTIC SCHEDULING:** Assign realistic integer values for 'startOffset' (days from now to begin) and 'duration' (days to complete).
-        5.  **PRIORITY DISTRIBUTION:** Distribute priorities effectively. Use 'high' for critical-path items, 'medium' for standard work, and 'low' for polish or non-essential tasks.
-        6.  **TAGS:** Use short, 3-4 letter uppercase codes (e.g., 'DEV', 'UI/UX', 'TEST', 'OPS', 'MKT'). Assign 1-2 relevant tags per task.
+        5.  **PRIORITY DISTRIBUTION:** Distribute priorities effectively:
+           - 20-30% tasks should be 'high' priority (critical-path items)
+           - 50-60% tasks should be 'medium' priority (standard work)
+           - 20-30% tasks should be 'low' priority (polish or non-essential tasks)
+        6.  **DEPENDENCIES:** Each task MUST have a 'dependsOn' array containing 0-3 task indices (array index, 0-based). Create logical dependency chains.
+        7.  **TAGS:** Use short, 3-4 letter uppercase codes (e.g., 'DEV', 'UI/UX', 'TEST', 'OPS', 'MKT'). Assign 1-2 relevant tags per task.
 
         Failure to follow these rules, especially the JSON output format and required fields, will result in system failure.
       `;
@@ -281,7 +285,8 @@ export class GeminiService {
                           priority: { type: Type.STRING, enum: ['low', 'medium', 'high'] },
                           tags: { type: Type.ARRAY, items: { type: Type.STRING } },
                           startOffset: { type: Type.INTEGER },
-                          duration: { type: Type.INTEGER }
+                          duration: { type: Type.INTEGER },
+                          dependsOn: { type: Type.ARRAY, items: { type: Type.INTEGER } }
                       }
                   }
               }
@@ -290,7 +295,7 @@ export class GeminiService {
 
       try {
           const rawText = await this.generateText(
-              `Create a detailed project plan for: "${userPrompt}". Ensure at least 8-12 granular tasks.`,
+              `Create a detailed project plan for: "${userPrompt}". Ensure at least 8-12 granular tasks with proper dependencies.`,
               systemPrompt,
               this.provider === 'gemini' ? geminiSchema : undefined
           );
@@ -299,7 +304,7 @@ export class GeminiService {
           
           // Post-processing: Hydrate dates relative to now
           const today = new Date();
-          const hydratedTasks = (data.tasks || []).map((t: any) => {
+          const tasksWithIds = (data.tasks || []).map((t: any, index: number) => {
               const start = new Date(today);
               start.setDate(today.getDate() + (t.startOffset || 0));
               
@@ -308,17 +313,43 @@ export class GeminiService {
               end.setDate(start.getDate() + duration);
 
               return {
-                  ...t,
-                  // Ensure defaults if AI missed them
+                  id: crypto.randomUUID(),
+                  title: t.title,
+                  description: t.description,
                   status: t.status || 'todo',
                   priority: t.priority || 'medium',
                   tags: t.tags || ['GEN'],
                   startDate: start.toISOString().split('T')[0],
-                  endDate: end.toISOString().split('T')[0]
+                  endDate: end.toISOString().split('T')[0],
+                  dependsOn: t.dependsOn || [],
+                  originalIndex: index
               };
           });
+          
+          // Convert dependsOn indices to actual task IDs
+          tasksWithIds.forEach((task: any) => {
+              if (task.dependsOn && Array.isArray(task.dependsOn)) {
+                  task.dependencyIds = task.dependsOn
+                      .filter((idx: number) => idx >= 0 && idx < tasksWithIds.length && idx !== task.originalIndex)
+                      .map((idx: number) => tasksWithIds[idx].id);
+                  delete task.dependsOn;
+              } else {
+                  task.dependencyIds = [];
+              }
+              delete task.originalIndex;
+          });
+          
+          // Fallback: If NO dependencies were created, create a simple chain
+          const hasDependencies = tasksWithIds.some((t: any) => t.dependencyIds && t.dependencyIds.length > 0);
+          if (!hasDependencies && tasksWithIds.length > 1) {
+              // Create a simple sequential dependency chain for high-priority tasks
+              const highPriorityTasks = tasksWithIds.filter((t: any) => t.priority === 'high');
+              for (let i = 1; i < highPriorityTasks.length; i++) {
+                  highPriorityTasks[i].dependencyIds = [highPriorityTasks[i-1].id];
+              }
+          }
 
-          return { ...data, tasks: hydratedTasks };
+          return { ...data, tasks: tasksWithIds };
 
       } catch (e) {
           console.error("Project Generation Failed:", e);
@@ -428,10 +459,55 @@ export class GeminiService {
   // --- Complex Methods (Repo Analysis & Chat) ---
 
   async analyzeRepoAndPlan(repoName: string, fileStructure: string, commitHistory: string, readme: string | null, packageJson: string | null): Promise<Task[]> {
-      const prompt = `Analyze Repo: ${repoName}\nFiles: ${fileStructure}\nCommits: ${commitHistory}\nREADME: ${readme}\nPkg: ${packageJson}\n\nCreate a JSON task list: { "tasks": [{ "title", "description", "priority", "status", "tags", "durationDays", "startDayOffset" }] }. \nCRITICAL: Assign 'high' priority to core architecture/bottlenecks, 'medium' to features, 'low' to polish. Varied priorities are required for the roadmap visualization. Generate relevant tags (e.g. 'REF', 'FEAT', 'BUG', 'TEST').`;
+      const prompt = `Analyze Repository: "${repoName}"
+
+FILE STRUCTURE:
+${fileStructure}
+
+RECENT COMMITS:
+${commitHistory}
+
+README:
+${readme || 'No README found'}
+
+PACKAGE.JSON:
+${packageJson || 'No package.json found'}
+
+TASK: Create a comprehensive project plan with task dependencies.
+
+CRITICAL REQUIREMENTS:
+1. Generate 8-15 granular, actionable tasks
+2. PRIORITY DISTRIBUTION (MANDATORY):
+   - Exactly 20-30% tasks must be "high" priority (critical path items like architecture, core features, blockers)
+   - Exactly 50-60% tasks must be "medium" priority (standard features, improvements)
+   - Exactly 20-30% tasks must be "low" priority (polish, documentation, nice-to-haves)
+3. DEPENDENCIES (MANDATORY):
+   - Each task MUST have a "dependsOn" array with 0-3 task indices (use array index, 0-based)
+   - Create logical dependency chains: setup → implementation → testing → deployment
+   - Example: Task 3 depends on tasks 0 and 1: "dependsOn": [0, 1]
+4. SCHEDULING:
+   - Assign realistic durationDays (2-14 days based on complexity)
+   - startDayOffset should account for dependencies (dependent tasks start after prerequisites)
+5. TAGS: Use 2-4 letter codes like 'ARCH', 'FEAT', 'TEST', 'DOCS', 'BUG', 'OPS', 'UI/UX'
+
+Return ONLY valid JSON matching this structure:
+{
+  "tasks": [
+    {
+      "title": "string",
+      "description": "string",
+      "priority": "high|medium|low",
+      "status": "todo",
+      "tags": ["string"],
+      "durationDays": number,
+      "startDayOffset": number,
+      "dependsOn": [number]
+    }
+  ]
+}`;
       
       try {
-          const text = await this.generateText(prompt, "CTO. Create exhaustive plan.", this.provider === 'gemini' ? {
+          const text = await this.generateText(prompt, "You are a Senior Technical Program Manager and Solution Architect. Create detailed, actionable project plans with proper task dependencies and priority distribution.", this.provider === 'gemini' ? {
               type: Type.OBJECT,
               properties: { tasks: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { 
                   title: { type: Type.STRING }, 
@@ -440,27 +516,89 @@ export class GeminiService {
                   priority: { type: Type.STRING }, 
                   tags: { type: Type.ARRAY, items: { type: Type.STRING } },
                   durationDays: { type: Type.INTEGER }, 
-                  startDayOffset: { type: Type.INTEGER } 
+                  startDayOffset: { type: Type.INTEGER },
+                  dependsOn: { type: Type.ARRAY, items: { type: Type.INTEGER } }
               }}}}
           } : undefined);
           
           const json = JSON.parse(this.cleanJson(text));
           const rawTasks = json.tasks || [];
           
+          // Post-process: Ensure priorities are distributed correctly
+          const priorityCounts = { high: 0, medium: 0, low: 0 };
+          rawTasks.forEach((t: any) => {
+              if (t.priority === 'high' || t.priority === 'medium' || t.priority === 'low') {
+                  priorityCounts[t.priority]++;
+              }
+          });
+          
+          // If priority distribution is poor, fix it
+          const total = rawTasks.length;
+          if (total > 0 && (priorityCounts.high < total * 0.15 || priorityCounts.high > total * 0.4)) {
+              // Rebalance: Mark first ~25% as high priority
+              const targetHigh = Math.max(2, Math.floor(total * 0.25));
+              const targetMedium = Math.floor(total * 0.55);
+              
+              rawTasks.forEach((t: any, idx: number) => {
+                  if (idx < targetHigh) {
+                      t.priority = 'high';
+                  } else if (idx < targetHigh + targetMedium) {
+                      t.priority = 'medium';
+                  } else {
+                      t.priority = 'low';
+                  }
+              });
+          }
+          
+          // Create task objects with UUIDs first
           const today = new Date();
-          return rawTasks.map((t: any) => {
-              const start = new Date(today); start.setDate(today.getDate() + (t.startDayOffset || 0));
-              const end = new Date(start); end.setDate(start.getDate() + (t.durationDays || 3));
+          const tasksWithIds = rawTasks.map((t: any, index: number) => {
+              const start = new Date(today); 
+              start.setDate(today.getDate() + (t.startDayOffset || 0));
+              
+              const duration = typeof t.durationDays === 'number' && t.durationDays > 0 ? t.durationDays : Math.floor(Math.random() * 4) + 3; // 3-6 days
+              const end = new Date(start); 
+              end.setDate(start.getDate() + duration);
+
               return {
-                  ...t,
                   id: crypto.randomUUID(),
+                  title: t.title,
+                  description: t.description,
                   createdAt: new Date().toISOString(),
                   status: t.status || 'todo',
                   priority: t.priority || 'medium',
+                  tags: t.tags || ['GEN'],
                   startDate: start.toISOString().split('T')[0],
-                  endDate: end.toISOString().split('T')[0]
+                  endDate: end.toISOString().split('T')[0],
+                  dependsOn: t.dependsOn || [],
+                  originalIndex: index
               };
           });
+          
+          // Convert dependsOn indices to actual task IDs
+          tasksWithIds.forEach((task: any) => {
+              if (task.dependsOn && Array.isArray(task.dependsOn)) {
+                  task.dependencyIds = task.dependsOn
+                      .filter((idx: number) => idx >= 0 && idx < tasksWithIds.length && idx !== task.originalIndex)
+                      .map((idx: number) => tasksWithIds[idx].id);
+                  delete task.dependsOn;
+              } else {
+                  task.dependencyIds = [];
+              }
+              delete task.originalIndex;
+          });
+          
+          // Fallback: If NO dependencies were created, create a simple chain
+          const hasDependencies = tasksWithIds.some((t: any) => t.dependencyIds && t.dependencyIds.length > 0);
+          if (!hasDependencies && tasksWithIds.length > 1) {
+              // Create a simple sequential dependency chain for high-priority tasks
+              const highPriorityTasks = tasksWithIds.filter((t: any) => t.priority === 'high');
+              for (let i = 1; i < highPriorityTasks.length; i++) {
+                  highPriorityTasks[i].dependencyIds = [highPriorityTasks[i-1].id];
+              }
+          }
+
+          return tasksWithIds;
       } catch (e) {
           console.error("Repo analysis error:", e);
           return [];

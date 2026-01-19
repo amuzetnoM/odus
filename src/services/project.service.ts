@@ -197,16 +197,19 @@ export class ProjectService {
       description,
       tasks: tasks.map(t => ({
         ...t,
-        id: crypto.randomUUID(),
+        // Preserve existing ID if present (for dependencies to work), otherwise generate new one
+        id: t.id || crypto.randomUUID(),
         createdAt: t.createdAt || new Date().toISOString(),
         status: t.status || 'todo',
-        priority: t.priority || 'medium'
+        priority: t.priority || 'medium',
+        // Ensure dependencyIds is preserved
+        dependencyIds: t.dependencyIds || []
       } as Task)),
       createdAt: new Date().toISOString(),
       color: randomColor
     };
     
-    const graph = newProject.tasks.map(t => ({ id: t.id, deps: t.dependencyIds }));
+    const graph = newProject.tasks.map(t => ({ id: t.id, deps: t.dependencyIds || [] }));
     this.persistence.saveRepoIndex(newProject.id, graph);
 
     this.projectsState.update(prev => [newProject, ...prev]);
