@@ -169,7 +169,7 @@ type SettingsTab = 'profile' | 'system';
                     </div>
                     <p class="text-[9px] text-zinc-600 mt-2">
                         @switch(selectedProvider()) {
-                            @case('gemini') { Uses 'gemini-2.5-flash'. }
+                            @case('gemini') { Uses 'gemini-2.0-flash'. }
                             @case('openai') { Uses 'gpt-4-turbo'. }
                             @case('anthropic') { Uses 'claude-3-5-sonnet'. }
                         }
@@ -223,7 +223,7 @@ type SettingsTab = 'profile' | 'system';
                                 <input 
                                     type="text" 
                                     [(ngModel)]="resetConfirmation"
-                                    class="w-full bg-zinc-950 border border-red-900/30 rounded p-2 text-xs text-red-400 focus:outline-none focus:border-red-500 placeholder:text-red-900/50"
+                                    class="w-full bg-zinc-900 border border-red-900/30 rounded p-2 text-xs text-red-400 focus:outline-none focus:border-red-500 placeholder:text-red-900/50"
                                     placeholder="RESET"
                                 />
                             </div>

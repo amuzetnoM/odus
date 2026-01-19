@@ -2,7 +2,7 @@
 # Getting Started with ODUS
 
 ![Angular](https://img.shields.io/badge/Angular-v18+-dd0031?style=flat-square&logo=angular)
-![AI](https://img.shields.io/badge/AI-Gemini_2.5_Flash-8e75b2?style=flat-square&logo=google-gemini)
+![AI](https://img.shields.io/badge/AI-Gemini_2.0_Flash-8e75b2?style=flat-square&logo=google-gemini)
 ![Version](https://img.shields.io/badge/Version-1.2.0-blue?style=flat-square)
 ![Updated](https://img.shields.io/badge/Last_Update-Feb_2025-green?style=flat-square)
 

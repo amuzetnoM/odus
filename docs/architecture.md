@@ -13,7 +13,7 @@ ODUS is built on a modern, performance-first stack designed for zero latency and
 *   **State Management:** Angular Signals (No RxJS boilerplate for state).
 *   **Change Detection:** `provideZonelessChangeDetection()` - Removing Zone.js improves performance and stack trace clarity.
 *   **Styling:** Tailwind CSS (Utility-first) with a custom **Neon/Cyberpunk** palette system.
-*   **AI:** Google Gemini 2.5 Flash via `@google/genai` SDK.
+*   **AI:** Google Gemini 2.0 Flash via `@google/genai` SDK.
 
 ## Data Persistence
 

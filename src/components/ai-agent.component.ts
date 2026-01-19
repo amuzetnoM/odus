@@ -1,5 +1,5 @@
 
-import { Component, inject, signal, effect, computed, ElementRef, viewChild, NgZone } from '@angular/core';
+import { Component, inject, signal, effect, computed, ElementRef, viewChild, NgZone, OnDestroy, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GeminiService } from '../services/gemini.service';
@@ -25,9 +25,11 @@ interface ChatMessage {
   imports: [CommonModule, FormsModule],
   template: `
     <!-- Floating Draggable Trigger -->
+    <!-- Added top-0 left-0 to ensure transform originates from viewport corner -->
     <div 
-      class="fixed z-50 select-none touch-none"
-      [style.transform]="'translate3d(' + buttonPosition().x + 'px, ' + buttonPosition().y + 'px, 0)'"
+      class="fixed top-0 left-0 select-none touch-none"
+      [style.zIndex]="9999"
+      [style.transform]="transformStyle()"
       (mousedown)="startDrag($event)"
       (touchstart)="startDrag($event)"
     >
@@ -48,7 +50,8 @@ interface ChatMessage {
     <!-- Chat Interface -->
     @if (isOpen()) {
       <div 
-        class="fixed bg-zinc-950/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden z-40 animate-scale-in origin-bottom-right"
+        class="fixed bg-zinc-950/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-scale-in origin-bottom-right"
+        [style.zIndex]="9998"
         [style]="chatWindowStyle()"
       >
         
@@ -56,7 +59,7 @@ interface ChatMessage {
         <div class="p-4 border-b border-white/5 bg-zinc-900/50 flex justify-between items-center shrink-0">
            <div>
              <h3 class="text-sm font-bold text-white tracking-widest">ODUS AI</h3>
-             <p class="text-[10px] text-zinc-500">Global Context Aware • Web Enabled</p>
+             <p class="text-[10px] text-zinc-500">Gemini 2.0 Flash • Connected</p>
            </div>
            <button (click)="clearHistory()" class="text-[10px] text-zinc-500 hover:text-white uppercase">Clear Memory</button>
         </div>
@@ -183,7 +186,7 @@ interface ChatMessage {
     .animate-bounce-gentle { animation: bounceGentle 3s infinite ease-in-out; }
   `]
 })
-export class AiAgentComponent {
+export class AiAgentComponent implements AfterViewInit, OnDestroy {
   geminiService = inject(GeminiService);
   projectService = inject(ProjectService);
   driveService = inject(DriveService);
@@ -199,8 +202,13 @@ export class AiAgentComponent {
   isListening = signal(false);
   scrollContainer = viewChild<ElementRef>('scrollContainer');
   
-  // Physics State
-  buttonPosition = signal({ x: window.innerWidth - 80, y: window.innerHeight - 80 });
+  // Physics State with robust defaults
+  buttonPosition = signal({ 
+      x: window.innerWidth > 0 ? window.innerWidth - 80 : 20, 
+      y: window.innerHeight > 0 ? window.innerHeight - 80 : 20 
+  });
+  
+  transformStyle = computed(() => `translate3d(${this.buttonPosition().x}px, ${this.buttonPosition().y}px, 0)`);
   
   isDragging = false;
   private dragOffset = { x: 0, y: 0 };
@@ -211,10 +219,20 @@ export class AiAgentComponent {
   private isThrown = false;
   
   // Boundaries
-  private windowWidth = window.innerWidth;
-  private windowHeight = window.innerHeight;
+  private windowWidth = window.innerWidth || 1000;
+  private windowHeight = window.innerHeight || 800;
   
   private recognition: any;
+  private safetyInterval: any;
+
+  // Bound handlers for cleanup
+  private readonly _onDrag = this.onDrag.bind(this);
+  private readonly _stopDrag = this.stopDrag.bind(this);
+  private readonly _onResize = () => {
+      this.windowWidth = document.documentElement.clientWidth || window.innerWidth;
+      this.windowHeight = document.documentElement.clientHeight || window.innerHeight;
+      this.enforceBoundaries();
+  };
 
   // Intelligent Chat Positioning
   chatWindowStyle = computed(() => {
@@ -272,7 +290,7 @@ export class AiAgentComponent {
           const userName = this.authService.currentUser().name.split(' ')[0];
           this.messages.set([{
               role: 'model',
-              text: `Hello ${userName}. I'm ODUS. I can manage projects, search the web, and generate data files (CSV/MD) for you.`,
+              text: `Hello ${userName}. I'm ODUS. I use the Gemini 2.0 Flash model to manage your projects.`,
               timestamp: new Date()
           }]);
       }
@@ -283,15 +301,11 @@ export class AiAgentComponent {
       });
 
       // Global Listeners for Drag Physics
-      window.addEventListener('mousemove', this.onDrag.bind(this));
-      window.addEventListener('mouseup', this.stopDrag.bind(this));
-      window.addEventListener('touchmove', this.onDrag.bind(this), { passive: false });
-      window.addEventListener('touchend', this.stopDrag.bind(this));
-      window.addEventListener('resize', () => {
-          this.windowWidth = window.innerWidth;
-          this.windowHeight = window.innerHeight;
-          this.enforceBoundaries();
-      });
+      window.addEventListener('mousemove', this._onDrag);
+      window.addEventListener('mouseup', this._stopDrag);
+      window.addEventListener('touchmove', this._onDrag, { passive: false });
+      window.addEventListener('touchend', this._stopDrag);
+      window.addEventListener('resize', this._onResize);
 
       // System messages logic
       effect(() => {
@@ -318,6 +332,30 @@ export class AiAgentComponent {
           this.recognition.onerror = () => this.isListening.set(false);
           this.recognition.onend = () => this.isListening.set(false);
       }
+  }
+
+  ngAfterViewInit() {
+      // Force initial boundaries check immediately to prevent drift
+      this.windowWidth = document.documentElement.clientWidth || window.innerWidth;
+      this.windowHeight = document.documentElement.clientHeight || window.innerHeight;
+      this.enforceBoundaries();
+
+      // Periodic safety check
+      this.zone.runOutsideAngular(() => {
+          this.safetyInterval = setInterval(() => {
+              this.zone.run(() => this.enforceBoundaries());
+          }, 2000);
+      });
+  }
+
+  ngOnDestroy() {
+      window.removeEventListener('mousemove', this._onDrag);
+      window.removeEventListener('mouseup', this._stopDrag);
+      window.removeEventListener('touchmove', this._onDrag);
+      window.removeEventListener('touchend', this._stopDrag);
+      window.removeEventListener('resize', this._onResize);
+      cancelAnimationFrame(this.animationFrameId);
+      clearInterval(this.safetyInterval);
   }
 
   // --- Physics & Drag Logic ---
@@ -440,8 +478,6 @@ export class AiAgentComponent {
           
           this.velocity = { x: vx, y: vy };
           
-          // Update Signal (inside Angular Zone to reflect in template? No, perf better outside, but need to update view)
-          // We can update signal, Angular signals are fine.
           this.zone.run(() => {
              this.buttonPosition.set({ x, y });
           });
@@ -464,10 +500,20 @@ export class AiAgentComponent {
       const size = 56;
       const margin = 10;
       
-      const newX = Math.max(margin, Math.min(this.windowWidth - size - margin, x));
-      const newY = Math.max(margin, Math.min(this.windowHeight - size - margin, y));
+      // Update dimensions first to be sure
+      this.windowWidth = document.documentElement.clientWidth || window.innerWidth || 1000;
+      this.windowHeight = document.documentElement.clientHeight || window.innerHeight || 800;
+
+      // Ensure valid numbers
+      let safeX = isNaN(x) ? this.windowWidth - 80 : x;
+      let safeY = isNaN(y) ? this.windowHeight - 80 : y;
+
+      const newX = Math.max(margin, Math.min(this.windowWidth - size - margin, safeX));
+      const newY = Math.max(margin, Math.min(this.windowHeight - size - margin, safeY));
       
-      this.buttonPosition.set({ x: newX, y: newY });
+      if (Math.abs(newX - x) > 1 || Math.abs(newY - y) > 1) {
+          this.buttonPosition.set({ x: newX, y: newY });
+      }
   }
 
   toggleChat() {

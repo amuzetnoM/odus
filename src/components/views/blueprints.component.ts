@@ -157,7 +157,7 @@ import { CommonModule } from '@angular/common';
                         Abstracted AI Gateway layer supporting swappable backend providers.
                     </p>
                     <div class="flex flex-wrap gap-2">
-                        <span class="chip border-indigo-500/30 text-indigo-400">Gemini 2.5 Flash</span>
+                        <span class="chip border-indigo-500/30 text-indigo-400">Gemini 2.0 Flash</span>
                         <span class="chip border-green-500/30 text-green-400">OpenAI GPT-4o</span>
                         <span class="chip border-amber-500/30 text-amber-400">Claude 3.5</span>
                     </div>

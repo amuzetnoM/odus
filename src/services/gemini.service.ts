@@ -79,7 +79,7 @@ export class GeminiService {
       try {
           if (this.provider === 'gemini') {
               const testAi = new GoogleGenAI({ apiKey: key });
-              await testAi.models.generateContent({ model: 'gemini-2.5-flash', contents: 'ping' });
+              await testAi.models.generateContent({ model: 'gemini-2.0-flash', contents: 'ping' });
               return true;
           }
           if (this.provider === 'openai') {
@@ -130,7 +130,7 @@ export class GeminiService {
           }
           
           const res = await this.googleAi.models.generateContent({
-              model: 'gemini-2.5-flash',
+              model: 'gemini-2.0-flash',
               contents: prompt,
               config
           });
@@ -345,7 +345,7 @@ export class GeminiService {
       if (this.provider === 'gemini' && this.googleAi) {
           try {
               const res = await this.googleAi.models.generateContent({
-                  model: 'gemini-2.5-flash',
+                  model: 'gemini-2.0-flash',
                   contents: [...history, { role: 'user', parts: [{ text: message }] }],
                   config: {
                       tools: [{ googleSearch: {} }],

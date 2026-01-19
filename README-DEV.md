@@ -2,7 +2,7 @@
 # ODUS AI - System Documentation
 
 ![Angular](https://img.shields.io/badge/Angular-v18+-dd0031?style=flat-square&logo=angular)
-![Gemini](https://img.shields.io/badge/AI-Gemini_2.5_Flash-8e75b2?style=flat-square&logo=google-gemini)
+![Gemini](https://img.shields.io/badge/AI-Gemini_2.0_Flash-8e75b2?style=flat-square&logo=google-gemini)
 ![Tailwind](https://img.shields.io/badge/Style-Tailwind_CSS-38bdf8?style=flat-square&logo=tailwindcss)
 ![Version](https://img.shields.io/badge/Version-1.2.0-blue?style=flat-square)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen?style=flat-square)
@@ -10,7 +10,7 @@
 **Version:** 1.2.0  
 **Framework:** Angular 18+ (Zoneless, Signals)  
 **Styling:** Tailwind CSS  
-**AI Core:** Google Gemini 2.5 Flash
+**AI Core:** Google Gemini 2.0 Flash
 
 ---
 
