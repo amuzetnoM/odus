@@ -1,8 +1,11 @@
 
-import { Component, input, computed } from '@angular/core';
+import { Component, input, computed, inject, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Task } from '../services/project.service';
 import { MS_PER_DAY } from '../utils/date-utils';
+import { MindService } from '../services/mind.service';
+import { ProjectService } from '../services/project.service';
+import { NotificationService } from '../services/notification.service';
 
 @Component({
   selector: 'app-task-card',
@@ -11,9 +14,16 @@ import { MS_PER_DAY } from '../utils/date-utils';
   template: `
     <div 
       class="bg-zinc-900/40 backdrop-blur-sm p-3 rounded-lg border border-white/5 hover:border-white/20 hover:bg-zinc-800/60 transition-all cursor-grab active:cursor-grabbing group relative select-none shadow-sm flex flex-col gap-2"
+      [class.ring-2]="isLongPressing()"
+      [class.ring-indigo-500]="isLongPressing()"
+      [class.scale-95]="isLongPressing()"
       [style.border-left]="'3px solid ' + (projectColor() || '#52525b')"
       draggable="true"
       (dragstart)="onDragStart($event)"
+      (dblclick)="onDoubleClick($event)"
+      (touchstart)="onTouchStart($event)"
+      (touchend)="onTouchEnd()"
+      (touchcancel)="onTouchEnd()"
     >
       <!-- Header: Title -->
       <div class="flex justify-between items-start gap-2">
@@ -89,6 +99,16 @@ import { MS_PER_DAY } from '../utils/date-utils';
 export class TaskCardComponent {
   task = input.required<Task>();
   projectColor = input<string>('#52525b');
+  projectId = input<string>();
+  
+  private mindService = inject(MindService);
+  private projectService = inject(ProjectService);
+  private notification = inject(NotificationService);
+  
+  private longPressTimer: any = null;
+  private longPressingSignal = signal(false);
+  
+  isLongPressing = this.longPressingSignal.asReadonly();
   
   // Display-friendly title (truncated for card display)
   displayTitle = computed(() => {
@@ -127,4 +147,90 @@ export class TaskCardComponent {
       default: return 'bg-zinc-800 text-zinc-500 border-zinc-700';
     }
   });
+  
+  onDoubleClick(event: MouseEvent) {
+    event.stopPropagation();
+    this.createMindNodeFromTask();
+  }
+  
+  onTouchStart(event: TouchEvent) {
+    this.longPressTimer = setTimeout(() => {
+      this.longPressingSignal.set(true);
+      this.createMindNodeFromTask();
+      // Provide haptic feedback if available
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+    }, 500); // 500ms for long press
+  }
+  
+  onTouchEnd() {
+    if (this.longPressTimer) {
+      clearTimeout(this.longPressTimer);
+      this.longPressTimer = null;
+    }
+    setTimeout(() => {
+      this.longPressingSignal.set(false);
+    }, 200);
+  }
+  
+  private async createMindNodeFromTask() {
+    const task = this.task();
+    const projectId = this.projectId();
+    
+    // Build detailed content for mind node
+    let content = `**Task: ${task.title}**\n\n`;
+    
+    if (task.description) {
+      content += `${task.description}\n\n`;
+    }
+    
+    content += `**Priority:** ${task.priority}\n`;
+    content += `**Status:** ${task.status}\n`;
+    
+    if (task.startDate) {
+      content += `**Start Date:** ${task.startDate}\n`;
+    }
+    
+    if (task.endDate) {
+      content += `**End Date:** ${task.endDate}\n`;
+    }
+    
+    if (task.tags && task.tags.length > 0) {
+      content += `**Tags:** ${task.tags.join(', ')}\n`;
+    }
+    
+    if (task.dependencyIds && task.dependencyIds.length > 0) {
+      content += `**Dependencies:** ${task.dependencyIds.length} task(s)\n`;
+    }
+    
+    if (task.metadata?.notes) {
+      content += `\n**Notes:**\n${task.metadata.notes}\n`;
+    }
+    
+    try {
+      // Create mind node
+      await this.mindService.addNode(content);
+      
+      // Get the newly created node (first in the list after adding)
+      const nodes = this.mindService.nodes();
+      const newNode = nodes[0];
+      
+      // Link task to mind node
+      if (projectId && newNode) {
+        this.projectService.updateTask(projectId, task.id, {
+          metadata: {
+            ...task.metadata,
+            mindNodeId: newNode.id,
+            notes: task.metadata?.notes || `Linked to mind node: ${newNode.title}`
+          }
+        });
+      }
+      
+      this.notification.notify('Mind Node Created', `"${newNode?.title || 'Untitled'}"`, 'success');
+    } catch (error) {
+      console.error('Failed to create mind node:', error);
+      this.notification.notify('Error', 'Failed to create mind node', 'error');
+    }
+  }
 }

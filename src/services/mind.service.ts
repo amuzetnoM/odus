@@ -10,6 +10,7 @@ export interface MindNode {
   tags: string[];
   links: string[]; // AI Semantic Links
   manualLinks: string[]; // User Override Links (Gold/Indigo)
+  taskReferences?: string[]; // References to task IDs
   createdAt: string;
   x?: number; 
   y?: number;
@@ -42,6 +43,7 @@ export class MindService {
             tags: ['ROOT', 'SYSTEM'],
             links: [],
             manualLinks: [],
+            taskReferences: [],
             createdAt: new Date().toISOString()
         }]);
     }
@@ -66,6 +68,7 @@ export class MindService {
          tags: analysis.tags,
          links: analysis.relatedNodeIds.filter(id => this.nodesState().some(n => n.id === id)),
          manualLinks: [],
+         taskReferences: [],
          createdAt: new Date().toISOString(),
          x: position?.x,
          y: position?.y
