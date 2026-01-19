@@ -188,19 +188,25 @@ export class ProjectService {
       window.location.reload();
   }
 
-  async addProject(title: string, description: string, tasks: Task[]) {
+  async addProject(title: string, description: string, tasks: Partial<Task>[]) {
     const randomColor = PROJECT_COLORS[Math.floor(Math.random() * PROJECT_COLORS.length)];
     
     const newProject: Project = {
       id: crypto.randomUUID(),
       title,
       description,
-      tasks: tasks.map(t => ({...t, createdAt: t.createdAt || new Date().toISOString()})),
+      tasks: tasks.map(t => ({
+        ...t,
+        id: crypto.randomUUID(),
+        createdAt: t.createdAt || new Date().toISOString(),
+        status: t.status || 'todo',
+        priority: t.priority || 'medium'
+      } as Task)),
       createdAt: new Date().toISOString(),
       color: randomColor
     };
     
-    const graph = tasks.map(t => ({ id: t.id, deps: t.dependencyIds }));
+    const graph = newProject.tasks.map(t => ({ id: t.id, deps: t.dependencyIds }));
     this.persistence.saveRepoIndex(newProject.id, graph);
 
     this.projectsState.update(prev => [newProject, ...prev]);
@@ -211,7 +217,7 @@ export class ProjectService {
     // Trigger Smart AI Manager Insight (Non-blocking)
     try {
         const insight = await this.geminiService.generateManagerialInsight({
-            title, description, taskCount: tasks.length, tasks
+            title, description, taskCount: newProject.tasks.length, tasks: newProject.tasks
         });
         this.notification.broadcastAiAgentMessage(insight);
     } catch(e) { console.error("Auto-manager failed", e); }

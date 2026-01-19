@@ -17,7 +17,7 @@ import { ProjectService } from '../services/project.service';
         <div class="absolute -top-20 -right-20 w-64 h-64 bg-zinc-800/20 rounded-full blur-3xl pointer-events-none"></div>
 
         <h2 class="text-xl font-light tracking-widest text-white mb-2 uppercase">Initialize Odus</h2>
-        <p class="text-zinc-500 text-xs font-mono mb-8">Define parameters for automated project generation.</p>
+        <p class="text-zinc-500 text-xs font-mono mb-8">Define project parameters.<br>Express goals or objective</p>
 
         <div class="mb-6">
            <label class="block text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-2">Prompt Input</label>

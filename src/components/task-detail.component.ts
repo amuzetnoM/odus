@@ -137,14 +137,30 @@ type Tab = 'details' | 'comments';
                                   </div>
                               }
                               
-                              <div class="flex gap-2">
-                                  <select #depSelect class="flex-1 bg-zinc-950 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-400 focus:outline-none focus:border-zinc-600">
-                                      <option value="">Select task to block this one...</option>
-                                      @for (t of availableDependencies(); track t.id) {
-                                          <option [value]="t.id">{{ t.title }}</option>
-                                      }
-                                  </select>
-                                  <button (click)="addDependency(depSelect.value); depSelect.value=''" class="px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/5 rounded text-xs text-zinc-300 uppercase font-bold">Add</button>
+                              <div class="flex gap-2 items-center h-8">
+                                  @if (!isCreatingDep()) {
+                                      <select #depSelect class="flex-1 bg-zinc-950 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-400 focus:outline-none focus:border-zinc-600 h-full">
+                                          <option value="">Select existing task...</option>
+                                          @for (t of availableDependencies(); track t.id) {
+                                              <option [value]="t.id">{{ t.title }}</option>
+                                          }
+                                      </select>
+                                      <button (click)="addDependency(depSelect.value); depSelect.value=''" [disabled]="!depSelect.value" class="px-3 h-full bg-white/5 hover:bg-white/10 border border-white/5 rounded text-xs text-zinc-300 uppercase font-bold transition-colors disabled:opacity-50">Link</button>
+                                      <div class="w-px h-4 bg-white/10 mx-1"></div>
+                                      <button (click)="isCreatingDep.set(true)" class="px-3 h-full bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 rounded text-xs text-indigo-400 uppercase font-bold transition-colors whitespace-nowrap" title="Create New Dependency">+ New</button>
+                                  } @else {
+                                      <input 
+                                          [ngModel]="newDepTitle()" 
+                                          (ngModelChange)="newDepTitle.set($event)" 
+                                          (keydown.enter)="createDependency()"
+                                          (keydown.escape)="isCreatingDep.set(false)"
+                                          class="flex-1 bg-zinc-950 border border-indigo-500/50 rounded px-2 py-1.5 text-xs text-white focus:outline-none placeholder:text-zinc-600 h-full"
+                                          placeholder="New task title..."
+                                          autofocus
+                                      />
+                                      <button (click)="createDependency()" class="px-3 h-full bg-indigo-600 text-white rounded text-xs font-bold uppercase transition-colors hover:bg-indigo-500">Create</button>
+                                      <button (click)="isCreatingDep.set(false)" class="px-2 h-full text-zinc-500 hover:text-white">✕</button>
+                                  }
                               </div>
                           </div>
                       </div>
@@ -154,13 +170,23 @@ type Tab = 'details' | 'comments';
                         <div class="flex justify-between items-center mb-3">
                            <label class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Linked Data</label>
                            <div class="flex gap-2 items-center">
-                               <select #fileSelect class="w-48 bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-[10px] text-zinc-400 focus:outline-none">
-                                   <option value="">Select file from Vault...</option>
-                                   @for(f of availableFiles(); track f.id) {
-                                       <option [value]="f.id">{{ f.name }}</option>
-                                   }
-                               </select>
-                               <button (click)="attachFile(fileSelect.value); fileSelect.value=''" class="text-[10px] font-bold text-zinc-300 bg-white/5 border border-white/5 px-2 py-1 rounded hover:bg-white/10 hover:text-white transition-colors" [disabled]="!availableFiles().length">LINK</button>
+                               <div class="flex bg-zinc-900 border border-zinc-800 rounded p-0.5">
+                                   <select #fileSelect class="bg-transparent text-[10px] text-zinc-400 focus:outline-none w-32 px-1">
+                                       <option value="">Select from Vault...</option>
+                                       @for(f of availableFiles(); track f.id) {
+                                           <option [value]="f.id">{{ f.name }}</option>
+                                       }
+                                   </select>
+                                   <button (click)="attachFile(fileSelect.value); fileSelect.value=''" class="px-2 py-0.5 bg-zinc-800 text-zinc-300 text-[10px] rounded hover:bg-zinc-700 disabled:opacity-50" [disabled]="!fileSelect.value">LINK</button>
+                               </div>
+                               
+                               <span class="text-zinc-700 text-[10px]">OR</span>
+                               
+                               <label class="cursor-pointer bg-white/5 hover:bg-white/10 border border-white/10 px-2 py-1 rounded text-[10px] text-zinc-300 hover:text-white uppercase font-bold transition-colors flex items-center gap-1">
+                                   <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                   Upload
+                                   <input type="file" class="hidden" (change)="onFileUpload($event)">
+                               </label>
                            </div>
                         </div>
                         
@@ -298,6 +324,10 @@ export class TaskDetailComponent {
   activeTab = signal<Tab>('details');
   showPreview = signal(false);
   descInput = viewChild<ElementRef>('descInput');
+  
+  // Create Dependency State
+  isCreatingDep = signal(false);
+  newDepTitle = signal('');
 
   // --- Computed ---
   taskFiles = computed(() => {
@@ -374,6 +404,14 @@ export class TaskDetailComponent {
       const ids = (this.task().attachmentIds || []).filter(id => id !== fileId);
       this.projectService.updateTask(this.projectId(), this.task().id, { attachmentIds: ids });
   }
+  
+  async onFileUpload(event: Event) {
+      const input = event.target as HTMLInputElement;
+      if (input.files && input.files[0]) {
+          const file = await this.driveService.addFile(input.files[0]);
+          this.attachFile(file.id);
+      }
+  }
 
   // --- Dependencies ---
   addDependency(targetId: string) {
@@ -385,6 +423,26 @@ export class TaskDetailComponent {
   removeDependency(targetId: string) {
       const ids = (this.task().dependencyIds || []).filter(id => id !== targetId);
       this.projectService.updateTask(this.projectId(), this.task().id, { dependencyIds: ids });
+  }
+  
+  createDependency() {
+      const title = this.newDepTitle().trim();
+      if(!title) return;
+      
+      // Add task to current project
+      const newTask = this.projectService.addTask(this.projectId(), {
+          title,
+          description: `Dependency for ${this.task().title}`,
+          status: 'todo',
+          priority: 'medium'
+      });
+
+      // Link it
+      this.addDependency(newTask.id);
+      
+      // Reset
+      this.newDepTitle.set('');
+      this.isCreatingDep.set(false);
   }
 
   // --- Comments ---

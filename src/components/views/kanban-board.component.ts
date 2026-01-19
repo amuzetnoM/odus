@@ -75,7 +75,7 @@ type SortOption = 'smart' | 'date' | 'priority' | 'created';
           <div class="flex-1 p-3 space-y-3 overflow-y-auto custom-scrollbar">
             @for (task of todoTasks(); track task.id) {
               <div (click)="taskClick.emit(task)" class="animate-enter">
-                <app-task-card [task]="task" />
+                <app-task-card [task]="task" [projectColor]="project().color || '#52525b'" />
               </div>
             }
           </div>
@@ -98,7 +98,7 @@ type SortOption = 'smart' | 'date' | 'priority' | 'created';
           <div class="flex-1 p-3 space-y-3 overflow-y-auto custom-scrollbar">
             @for (task of inProgressTasks(); track task.id) {
                <div (click)="taskClick.emit(task)" class="animate-enter">
-                 <app-task-card [task]="task" />
+                 <app-task-card [task]="task" [projectColor]="project().color || '#52525b'" />
                </div>
             }
           </div>
@@ -121,7 +121,7 @@ type SortOption = 'smart' | 'date' | 'priority' | 'created';
           <div class="flex-1 p-3 space-y-3 overflow-y-auto custom-scrollbar">
             @for (task of doneTasks(); track task.id) {
                <div (click)="taskClick.emit(task)" class="opacity-60 grayscale hover:opacity-100 hover:grayscale-0 transition-all animate-done">
-                 <app-task-card [task]="task" />
+                 <app-task-card [task]="task" [projectColor]="project().color || '#52525b'" />
                </div>
             }
           </div>

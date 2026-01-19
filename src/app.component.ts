@@ -59,26 +59,6 @@ import { ZenModeComponent } from './components/zen-mode.component';
         <!-- Sidebar -->
         <aside class="w-16 lg:w-64 border-r border-white/5 bg-zinc-950/50 backdrop-blur-md flex flex-col shrink-0 z-10 transition-all duration-300 relative group">
           
-          <!-- Header / User Profile -->
-          <div 
-            class="p-4 lg:p-6 flex items-center justify-center lg:justify-start gap-3 border-b border-white/5 cursor-pointer hover:bg-white/5 transition-colors group/profile"
-            (click)="showSettingsModal.set(true)"
-            title="Open Settings"
-          >
-             <div class="relative">
-                <img 
-                  [src]="authService.currentUser().avatar" 
-                  class="w-8 h-8 rounded-full object-cover border border-white/10 group-hover/profile:border-white/30 transition-colors bg-zinc-900" 
-                  alt="User"
-                />
-                <div class="absolute inset-0 rounded-full border border-white/10 shadow-[0_0_10px_rgba(255,255,255,0.1)] opacity-0 group-hover/profile:opacity-100 transition-opacity"></div>
-             </div>
-             <div class="hidden lg:flex flex-col min-w-0">
-                 <span class="text-xs font-bold text-white tracking-widest uppercase truncate">{{ authService.currentUser().name }}</span>
-                 <span class="text-[9px] text-zinc-500 font-mono">ID: {{ authService.currentUser().id.substring(0,4) }}</span>
-             </div>
-          </div>
-
           <!-- Nav -->
           <nav class="flex-1 py-6 flex flex-col gap-2 px-2 lg:px-4">
             <button 

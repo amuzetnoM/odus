@@ -4,7 +4,7 @@ import { GoogleGenAI, Type, Schema, Content } from '@google/genai';
 import { Task, Project } from './project.service';
 import { PersistenceService } from './persistence.service';
 
-export type AiProvider = 'gemini' | 'openai' | 'anthropic';
+export type AiProvider = 'gemini' | 'openai' | 'anthropic' | 'ollama' | 'openrouter';
 
 export interface AgentResponse {
   text: string;
@@ -30,6 +30,9 @@ export class GeminiService {
   // Gemini Instance
   private googleAi: GoogleGenAI | null = null;
   
+  // Ollama Config
+  private readonly ollamaBase = 'http://localhost:11434';
+  
   private persistence = inject(PersistenceService);
 
   constructor() {
@@ -50,6 +53,8 @@ export class GeminiService {
           case 'gemini': return localStorage.getItem('gemini_api_key') || '';
           case 'openai': return localStorage.getItem('openai_api_key') || '';
           case 'anthropic': return localStorage.getItem('anthropic_api_key') || '';
+          case 'ollama': return localStorage.getItem('ollama_model') || 'llama3'; // Use key slot for Model Name
+          case 'openrouter': return localStorage.getItem('openrouter_api_key') || '';
           default: return '';
       }
   }
@@ -58,7 +63,9 @@ export class GeminiService {
     const keyMap: Record<AiProvider, string> = {
         'gemini': 'gemini_api_key',
         'openai': 'openai_api_key',
-        'anthropic': 'anthropic_api_key'
+        'anthropic': 'anthropic_api_key',
+        'ollama': 'ollama_model',
+        'openrouter': 'openrouter_api_key'
     };
     localStorage.setItem(keyMap[provider], key);
     this.provider = provider;
@@ -75,20 +82,22 @@ export class GeminiService {
   }
   
   async validateConnection(key: string): Promise<boolean> {
-      if (!key) return false;
       try {
           if (this.provider === 'gemini') {
+              if (!key) return false;
               const testAi = new GoogleGenAI({ apiKey: key });
               await testAi.models.generateContent({ model: 'gemini-2.0-flash', contents: 'ping' });
               return true;
           }
           if (this.provider === 'openai') {
+              if (!key) return false;
               const res = await fetch('https://api.openai.com/v1/models', {
                   headers: { 'Authorization': `Bearer ${key}` }
               });
               return res.ok;
           }
           if (this.provider === 'anthropic') {
+              if (!key) return false;
               const res = await fetch('https://api.anthropic.com/v1/messages', {
                   method: 'POST',
                   headers: {
@@ -101,6 +110,18 @@ export class GeminiService {
                       max_tokens: 1,
                       messages: [{ role: 'user', content: 'ping' }]
                   })
+              });
+              return res.ok;
+          }
+          if (this.provider === 'ollama') {
+              // Check tags to see if server is up
+              const res = await fetch(`${this.ollamaBase}/api/tags`);
+              return res.ok;
+          }
+          if (this.provider === 'openrouter') {
+              if (!key) return false;
+              const res = await fetch('https://openrouter.ai/api/v1/models', {
+                  headers: { 'Authorization': `Bearer ${key}` }
               });
               return res.ok;
           }
@@ -137,13 +158,14 @@ export class GeminiService {
           return res.text || '';
       }
 
+      // Common Message Structure for OpenAI/Ollama/OpenRouter
+      const messages = [
+          { role: 'system', content: systemInstruction || 'You are a helpful AI.' },
+          { role: 'user', content: prompt }
+      ];
+
       // 2. OpenAI
       if (this.provider === 'openai') {
-          const messages = [
-              { role: 'system', content: systemInstruction || 'You are a helpful AI.' },
-              { role: 'user', content: prompt }
-          ];
-          
           const body: any = {
               model: 'gpt-4-turbo',
               messages,
@@ -156,7 +178,7 @@ export class GeminiService {
               body: JSON.stringify(body)
           });
           const data = await res.json();
-          return data.choices[0]?.message?.content || '';
+          return data.choices?.[0]?.message?.content || '';
       }
 
       // 3. Anthropic
@@ -174,15 +196,134 @@ export class GeminiService {
                   'x-api-key': this.apiKey, 
                   'anthropic-version': '2023-06-01', 
                   'content-type': 'application/json',
-                  'dangerously-allow-browser': 'true' // Only for client-side demo
+                  'dangerously-allow-browser': 'true'
               },
               body: JSON.stringify(body)
           });
           const data = await res.json();
-          return data.content[0]?.text || '';
+          return data.content?.[0]?.text || '';
+      }
+
+      // 4. Ollama (Local)
+      if (this.provider === 'ollama') {
+          const body: any = {
+              model: this.apiKey || 'llama3', // apiKey slot holds model name
+              messages,
+              stream: false,
+              format: jsonSchema ? 'json' : undefined
+          };
+          
+          const res = await fetch(`${this.ollamaBase}/api/chat`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body)
+          });
+          const data = await res.json();
+          return data.message?.content || '';
+      }
+
+      // 5. OpenRouter
+      if (this.provider === 'openrouter') {
+          const body: any = {
+              model: 'meta-llama/llama-3.1-70b-instruct', // Reasonable default for OpenRouter
+              messages,
+              response_format: jsonSchema ? { type: 'json_object' } : undefined
+          };
+
+          const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+              method: 'POST',
+              headers: { 
+                  'Authorization': `Bearer ${this.apiKey}`,
+                  'HTTP-Referer': window.location.href,
+                  'X-Title': 'ODUS',
+                  'Content-Type': 'application/json' 
+              },
+              body: JSON.stringify(body)
+          });
+          const data = await res.json();
+          return data.choices?.[0]?.message?.content || '';
       }
 
       throw new Error('Provider not configured or invalid.');
+  }
+
+  // --- Rebuilt Project Generator (Exhaustive & Robust) ---
+
+  async generateProjectStructure(userPrompt: string): Promise<any> {
+      // Powerful System Prompt for Chain of Thought
+      const systemPrompt = `
+        You are a world-class Senior Technical Program Manager. Your task is to transform a user's objective into a detailed, executable project plan.
+
+        **CRITICAL RULES:**
+        1.  **OUTPUT FORMAT IS NON-NEGOTIABLE:** You MUST respond with ONLY a valid JSON object that strictly adheres to the provided schema. Do not add any conversational text, markdown, or explanations before or after the JSON.
+        2.  **TASK GRANULARITY:** Generate an exhaustive list of 8 to 15 granular, actionable tasks. Break down high-level concepts into smaller steps.
+        3.  **ALL FIELDS ARE REQUIRED:** For every single task, you MUST provide a value for 'title', 'description', 'status', 'priority', 'tags', 'startOffset', and 'duration'.
+        4.  **REALISTIC SCHEDULING:** Assign realistic integer values for 'startOffset' (days from now to begin) and 'duration' (days to complete).
+        5.  **PRIORITY DISTRIBUTION:** Distribute priorities effectively. Use 'high' for critical-path items, 'medium' for standard work, and 'low' for polish or non-essential tasks.
+        6.  **TAGS:** Use short, 3-4 letter uppercase codes (e.g., 'DEV', 'UI/UX', 'TEST', 'OPS', 'MKT'). Assign 1-2 relevant tags per task.
+
+        Failure to follow these rules, especially the JSON output format and required fields, will result in system failure.
+      `;
+
+      const geminiSchema = {
+          type: Type.OBJECT,
+          properties: {
+              title: { type: Type.STRING },
+              description: { type: Type.STRING },
+              tasks: {
+                  type: Type.ARRAY,
+                  items: {
+                      type: Type.OBJECT,
+                      properties: {
+                          title: { type: Type.STRING },
+                          description: { type: Type.STRING },
+                          status: { type: Type.STRING, enum: ['todo', 'in-progress'] },
+                          priority: { type: Type.STRING, enum: ['low', 'medium', 'high'] },
+                          tags: { type: Type.ARRAY, items: { type: Type.STRING } },
+                          startOffset: { type: Type.INTEGER },
+                          duration: { type: Type.INTEGER }
+                      }
+                  }
+              }
+          }
+      };
+
+      try {
+          const rawText = await this.generateText(
+              `Create a detailed project plan for: "${userPrompt}". Ensure at least 8-12 granular tasks.`,
+              systemPrompt,
+              this.provider === 'gemini' ? geminiSchema : undefined
+          );
+
+          const data = JSON.parse(this.cleanJson(rawText));
+          
+          // Post-processing: Hydrate dates relative to now
+          const today = new Date();
+          const hydratedTasks = (data.tasks || []).map((t: any) => {
+              const start = new Date(today);
+              start.setDate(today.getDate() + (t.startOffset || 0));
+              
+              const duration = typeof t.duration === 'number' && t.duration > 0 ? t.duration : Math.floor(Math.random() * 4) + 2; // 2-5 days
+              const end = new Date(start);
+              end.setDate(start.getDate() + duration);
+
+              return {
+                  ...t,
+                  // Ensure defaults if AI missed them
+                  status: t.status || 'todo',
+                  priority: t.priority || 'medium',
+                  tags: t.tags || ['GEN'],
+                  startDate: start.toISOString().split('T')[0],
+                  endDate: end.toISOString().split('T')[0]
+              };
+          });
+
+          return { ...data, tasks: hydratedTasks };
+
+      } catch (e) {
+          console.error("Project Generation Failed:", e);
+          throw new Error("Failed to generate project structure.");
+      }
   }
 
   // --- Smart Features ---
@@ -269,26 +410,16 @@ export class GeminiService {
       } catch { return { title: 'New Idea', properties: {}, tags: [], relatedNodeIds: [] }; }
   }
 
-  async generateProjectStructure(description: string): Promise<any> {
-      const prompt = `Create project plan: "${description}". Return JSON: { "title": "", "description": "", "tasks": [{ "title": "", "description": "", "status": "todo", "priority": "high"|"medium"|"low", "startDateOffset": 0, "durationDays": 1 }] }. IMPORTANT: Mix 'high', 'medium', 'low' priorities accurately.`;
-      try {
-          const text = await this.generateText(prompt, "Project Planner.", this.provider === 'gemini' ? {
-              type: Type.OBJECT,
-              properties: {
-                  title: { type: Type.STRING },
-                  description: { type: Type.STRING },
-                  tasks: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, description: { type: Type.STRING }, status: { type: Type.STRING }, priority: { type: Type.STRING }, startDateOffset: { type: Type.INTEGER }, durationDays: { type: Type.INTEGER }}}}
-              }
-          } : undefined);
-          return JSON.parse(this.cleanJson(text));
-      } catch { throw new Error('Generation failed'); }
-  }
-
   async suggestNextTask(currentTasks: any[]): Promise<any> {
-      const prompt = `Tasks: ${JSON.stringify(currentTasks.map(t => t.title))}. Suggest 1 missing task. JSON: { "title": "", "description": "", "priority": "medium" }`;
+      const prompt = `Tasks: ${JSON.stringify(currentTasks.map(t => t.title))}. Suggest 1 missing task. JSON: { "title": "", "description": "", "priority": "medium", "tags": [] }`;
       try {
           const text = await this.generateText(prompt, "Project Assistant.", this.provider === 'gemini' ? {
-              type: Type.OBJECT, properties: { title: {type:Type.STRING}, description: {type:Type.STRING}, priority: {type:Type.STRING}}
+              type: Type.OBJECT, properties: { 
+                  title: {type:Type.STRING}, 
+                  description: {type:Type.STRING}, 
+                  priority: {type:Type.STRING},
+                  tags: { type: Type.ARRAY, items: { type: Type.STRING } }
+              }
           } : undefined);
           return JSON.parse(this.cleanJson(text));
       } catch { return null; }
@@ -297,13 +428,19 @@ export class GeminiService {
   // --- Complex Methods (Repo Analysis & Chat) ---
 
   async analyzeRepoAndPlan(repoName: string, fileStructure: string, commitHistory: string, readme: string | null, packageJson: string | null): Promise<Task[]> {
-      const prompt = `Analyze Repo: ${repoName}\nFiles: ${fileStructure}\nCommits: ${commitHistory}\nREADME: ${readme}\nPkg: ${packageJson}\n\nCreate a JSON task list: { "tasks": [{ "title", "description", "priority", "status", "durationDays", "startDayOffset" }] }. \nCRITICAL: Assign 'high' priority to core architecture/bottlenecks, 'medium' to features, 'low' to polish. Varied priorities are required for the roadmap visualization.`;
+      const prompt = `Analyze Repo: ${repoName}\nFiles: ${fileStructure}\nCommits: ${commitHistory}\nREADME: ${readme}\nPkg: ${packageJson}\n\nCreate a JSON task list: { "tasks": [{ "title", "description", "priority", "status", "tags", "durationDays", "startDayOffset" }] }. \nCRITICAL: Assign 'high' priority to core architecture/bottlenecks, 'medium' to features, 'low' to polish. Varied priorities are required for the roadmap visualization. Generate relevant tags (e.g. 'REF', 'FEAT', 'BUG', 'TEST').`;
       
       try {
           const text = await this.generateText(prompt, "CTO. Create exhaustive plan.", this.provider === 'gemini' ? {
               type: Type.OBJECT,
               properties: { tasks: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { 
-                  title: { type: Type.STRING }, description: { type: Type.STRING }, status: { type: Type.STRING }, priority: { type: Type.STRING }, durationDays: { type: Type.INTEGER }, startDayOffset: { type: Type.INTEGER } 
+                  title: { type: Type.STRING }, 
+                  description: { type: Type.STRING }, 
+                  status: { type: Type.STRING }, 
+                  priority: { type: Type.STRING }, 
+                  tags: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  durationDays: { type: Type.INTEGER }, 
+                  startDayOffset: { type: Type.INTEGER } 
               }}}}
           } : undefined);
           
@@ -342,6 +479,7 @@ export class GeminiService {
         Context: ${contextData}
       `;
 
+      // 1. Google Gemini (Native Chat)
       if (this.provider === 'gemini' && this.googleAi) {
           try {
               const res = await this.googleAi.models.generateContent({
@@ -354,16 +492,75 @@ export class GeminiService {
               });
               
               const text = res.text || '';
-              // Simple parser for simulated tool calls in text
               const cleanText = this.cleanJson(text);
               if (cleanText.startsWith('{') && cleanText.includes('toolCall')) {
                   try { return { text: 'Processing...', toolCall: JSON.parse(cleanText).toolCall, groundingMetadata: res.candidates?.[0]?.groundingMetadata }; } catch {}
               }
               return { text, groundingMetadata: res.candidates?.[0]?.groundingMetadata };
           } catch { return { text: 'Connection Error.' }; }
-      } else {
-          // Fallback for others (No Grounding)
-          const text = await this.generateText(message, system);
+      } 
+      
+      // 2. Others (OpenAI / Anthropic / Ollama / OpenRouter) - Manual Chat Construction
+      else {
+          const messages: any[] = [];
+          
+          // System Prompt (Prepend)
+          if (this.provider !== 'anthropic') {
+              messages.push({ role: 'system', content: system });
+          }
+
+          // Convert History (Gemini Content -> Standard Message)
+          history.forEach(h => {
+              messages.push({ 
+                  role: h.role === 'model' ? 'assistant' : 'user', 
+                  content: (h.parts[0] as any).text 
+              });
+          });
+          
+          // Add Current User Message
+          messages.push({ role: 'user', content: message });
+
+          // Helper to call specific endpoints with full history
+          let text = '';
+          
+          if (this.provider === 'openai') {
+              const res = await fetch('https://api.openai.com/v1/chat/completions', {
+                  method: 'POST',
+                  headers: { 'Authorization': `Bearer ${this.apiKey}`, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ model: 'gpt-4-turbo', messages })
+              });
+              text = (await res.json()).choices?.[0]?.message?.content || '';
+          }
+          else if (this.provider === 'ollama') {
+              const res = await fetch(`${this.ollamaBase}/api/chat`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ 
+                      model: this.apiKey || 'llama3', 
+                      messages, 
+                      stream: false 
+                  })
+              });
+              text = (await res.json()).message?.content || '';
+          }
+          else if (this.provider === 'openrouter') {
+              const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                  method: 'POST',
+                  headers: { 
+                      'Authorization': `Bearer ${this.apiKey}`,
+                      'HTTP-Referer': window.location.href,
+                      'X-Title': 'ODUS',
+                      'Content-Type': 'application/json' 
+                  },
+                  body: JSON.stringify({ model: 'meta-llama/llama-3.1-70b-instruct', messages })
+              });
+              text = (await res.json()).choices?.[0]?.message?.content || '';
+          }
+          else if (this.provider === 'anthropic') {
+              // Simple fallback for Anthropic which handles history differently
+              text = await this.generateText(`History: ${JSON.stringify(history)}\nUser: ${message}`, system);
+          }
+
           const cleanText = this.cleanJson(text);
           if (cleanText.startsWith('{') && cleanText.includes('toolCall')) {
               try { return { text: 'Processing...', toolCall: JSON.parse(cleanText).toolCall }; } catch {}

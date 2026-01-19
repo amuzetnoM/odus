@@ -43,29 +43,33 @@ export class DriveService {
       } catch(e) { console.error('Error loading files', e); }
   }
 
-  async addFile(file: File) {
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-        const newFile: DriveFile = {
-            id: crypto.randomUUID(),
-            name: file.name,
-            type: this.getType(file.type),
-            sizeStr: this.formatSize(file.size),
-            createdAt: new Date().toISOString(),
-            dataUrl: e.target?.result as string
+  addFile(file: File): Promise<DriveFile> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const newFile: DriveFile = {
+                id: crypto.randomUUID(),
+                name: file.name,
+                type: this.getType(file.type),
+                sizeStr: this.formatSize(file.size),
+                createdAt: new Date().toISOString(),
+                dataUrl: e.target?.result as string
+            };
+            
+            // Optimistic UI update
+            this.filesState.update(prev => [newFile, ...prev]);
+            
+            // Async save to DB (Non-blocking)
+            try {
+                await this.persistence.saveFile(newFile);
+            } catch (err) {
+                console.error('Failed to save file to DB', err);
+            }
+            resolve(newFile);
         };
-        
-        // Optimistic UI update
-        this.filesState.update(prev => [newFile, ...prev]);
-        
-        // Async save to DB (Non-blocking)
-        try {
-            await this.persistence.saveFile(newFile);
-        } catch (err) {
-            console.error('Failed to save file to DB', err);
-        }
-    };
-    reader.readAsDataURL(file);
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(file);
+    });
   }
   
   async createDummyFile() {

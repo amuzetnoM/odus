@@ -4,12 +4,12 @@
 ![Angular](https://img.shields.io/badge/Angular-v18+-dd0031?style=flat-square&logo=angular)
 ![Gemini](https://img.shields.io/badge/AI-Gemini_2.0_Flash-8e75b2?style=flat-square&logo=google-gemini)
 ![Tailwind](https://img.shields.io/badge/Style-Tailwind_CSS-38bdf8?style=flat-square&logo=tailwindcss)
-![Version](https://img.shields.io/badge/Version-1.2.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.3.0-blue?style=flat-square)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen?style=flat-square)
 
-**Version:** 1.2.0  
+**Version:** 1.3.0  
 **Framework:** Angular 18+ (Zoneless, Signals)  
-**Styling:** Tailwind CSS  
+**Styling:** Tailwind CSS (Dark/Light Mode Support)  
 **AI Core:** Google Gemini 2.0 Flash
 
 ---
@@ -21,80 +21,69 @@ ODUS is a comprehensive, AI-first Project Management Suite designed for high-vel
 ### Core Philosophy
 -   **Zoneless Architecture:** Uses Angular Signals exclusively for state management.
 -   **Local-First:** All data persists to `IndexedDB` via a `PersistenceService`.
--   **AI-Native:** AI is not a chatbot addon; it drives data generation, project planning, and relationship mapping.
--   **Visual Richness:** Implements a cinematic "Landing Page" and deep "Neon/Cyberpunk" aesthetic for high engagement.
+-   **AI-Native:** AI drives data generation, project planning, and relationship mapping.
+-   **Physics-Driven UI:** Implements D3.js force simulations and custom physics engines for natural UI interactions (Floating Agent, Mind Board).
 
 ---
 
 ## 2. Feature Modules
 
-### 2.1 Dashboard (System)
+### 2.1 Dashboard (Scope)
 The landing command center.
--   **Founder's Focus List:** A prioritized subset of tasks from all projects.
-    -   *Features:* Drag-and-drop reordering, priority toggling (Low/Med/High), quick edit, metadata expansion.
-    -   *Visuals:* Items are color-coded based on their parent Project's assigned neon color.
-    -   *AI Curation:* The "Curate (AI)" button scans all open tasks and selects the most critical ones based on deadlines and priority.
--   **Smart Quick Add:** Natural language input routed by AI to the correct project (or Personal). Also creates a shadow node in the Mind Board.
+-   **Founder's Focus List:** A prioritized subset of tasks color-coded by project identity.
+-   **Success Roadmap:** A calculated "Optimal Delivery Vector" visualization using D3.js to show critical path nodes and temporal flow.
+-   **Smart Quick Add:** Natural language input routed by AI to the correct project (or Personal).
 
-### 2.2 Project Streams
-The core work units.
--   **Side-by-Side Viewing:** Multiple projects can be active simultaneously (hold `Ctrl/Cmd` to select multiple).
--   **Views:**
-    -   **Kanban:** Drag-and-drop status management.
-    -   **Gantt:** Timeline visualization.
-    -   **Node Graph:** Dependency visualization using D3.
--   **AI Generation:** Create entire project structures from a single prompt.
+### 2.2 Interface Customization (New in v1.3)
+-   **Theme Engine:** Toggle between Dark and Light modes.
+-   **Accent Control:** Custom neon accent selection (Indigo, Cyan, Rose, Amber, Emerald).
+-   **Responsive Layout:** Sidebar collapses to icon-only mode on mobile; resizable width on desktop.
+-   **Slide-Up Telemetry:** System metrics (Health, Focus Load) are tucked away in a bottom-sheet panel to reduce visual noise.
 
-### 2.3 GitHub Integration
-Deep repository intelligence.
--   **Multi-Pass Analysis:**
-    1.  Fetches Commits, File Tree, README, and Package.json.
-    2.  **Pass 1:** AI drafts an exhaustive task list.
-    3.  **Pass 2:** AI critiques its own draft for security, testing, and edge cases before finalizing.
--   **Filtering:** Source Only / Active Only toggles.
+### 2.3 Zen Mode
+-   **Distraction Free:** A dedicated canvas for relaxation and focus.
+-   **Interactive Particles:** Mouse-driven particle physics simulation to help reset mental state.
 
-### 2.4 Data Vault (Drive)
--   **Drag-and-Drop:** Global drop zone for files.
--   **Storage:** Persists file metadata and Blob content to IndexedDB.
+### 2.4 Project Streams
+-   **Views:** Kanban, Gantt, and Node Graph.
+-   **Risk Scan:** AI analysis of circular dependencies and resource bottlenecks.
 
-### 2.5 Mind Board (Pinned Ideas)
-A space for unstructured thinking.
--   **Input:** Text-based idea capture.
--   **AI Processing:**
-    -   Parses content to extract structured **Properties** (Key-Value).
-    -   Auto-generates **Tags**.
-    -   **Graph Linking:** Semantic analysis finds relationships to existing ideas.
--   **Visualization:** A full-canvas, interactive D3 Force-Directed Graph. Nodes can be added with a double-click and edited directly by clicking on them.
+### 2.5 GitHub Intelligence
+-   **Multi-Pass Analysis:** recursive fetching of repo structure to generate actionable project boards.
+-   **Terminal View:** Cyberpunk CLI interface for import logs.
 
-### 2.6 AI Agent (Artifact)
--   **Context Aware:** Has read access to all active projects and files.
--   **Voice Enabled:** Speech-to-Text input.
--   **Tool Use:** Can create text documents in the Data Vault directly.
+### 2.6 Neural Mind Board
+-   **Graph Database:** Semantic linking of unstructured ideas.
+-   **Markdown Editor:** Full-screen writing environment with live preview.
+
+### 2.7 AI Agent (Artifact)
+-   **Physics Button:** Draggable, "throwable" floating action button with boundary collision detection.
+-   **Generative UI:** Renders rich components (File Previews, Success Cards) directly in the chat stream.
+-   **Tool Calling:** Can create files, projects, and navigate the app autonomously.
 
 ---
 
 ## 3. Architecture & Services
 
 ### `ProjectService`
-Manages `Project` and `Task` entities. Handles CRUD, status updates, and moving tasks between projects.
+Manages `Project` and `Task` entities.
 -   *Signals:* `projects`, `activeProjectIds`, `metrics`.
--   *Updates:* Now manages auto-assignment of Project Colors.
+
+### `ThemeService` (New)
+Manages global UI state.
+-   *Responsibility:* Dark/Light mode toggling, Sidebar width persistence, CSS Variable injection for accent colors.
 
 ### `GeminiService`
 The brain of the operation.
 -   **`analyzeRepoAndPlan`**: Two-stage recursive thinking for code analysis.
--   **`analyzeIdea`**: Structured extraction for Mind Board.
--   **`chatWithAgent`**: Conversational interface with tool calling (`create_note`).
+-   **`chatWithAgent`**: Conversational interface with tool calling (`create_note`, `navigate`, etc.).
 
 ### `PersistenceService`
 Wrapper around `IndexedDB`.
--   Stores: `repos`, `drive_files`, `ai_memory`.
--   Ensures data survives page reloads.
+-   Stores: `repos`, `drive_files`, `ai_memory`, `repo_dependency_index`.
 
 ### `MindService`
 Manages the "Knowledge Graph" of ideas.
--   Automatically handles bidirectional linking when new nodes are added.
--   Supports "Manual" (Gold) and "Semantic" (Grey) links.
 
 ---
 
@@ -102,7 +91,7 @@ Manages the "Knowledge Graph" of ideas.
 
 1.  **Install Dependencies:** No `npm install` required (ESM imports via CDN).
 2.  **Environment:** Ensure `process.env.API_KEY` is set with a valid Gemini API Key.
-3.  **Run:** Standard Angular CLI serve or compatible web server.
+3.  **Run:** Standard Angular CLI serve.
 
 ```bash
 ng serve

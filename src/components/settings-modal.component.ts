@@ -145,23 +145,27 @@ type SettingsTab = 'profile' | 'system';
                         <option value="gemini">Google Gemini</option>
                         <option value="openai">OpenAI (GPT-4)</option>
                         <option value="anthropic">Anthropic (Claude 3.5)</option>
+                        <option value="ollama">Ollama (Local)</option>
+                        <option value="openrouter">OpenRouter</option>
                     </select>
                 </div>
 
-                <!-- API Key (Dynamic based on provider) -->
+                <!-- API Key / Model Input (Dynamic) -->
                 <div>
                     <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">
                         @switch(selectedProvider()) {
                             @case('gemini') { Gemini API Key }
                             @case('openai') { OpenAI API Key }
                             @case('anthropic') { Anthropic API Key }
+                            @case('ollama') { Model Name }
+                            @case('openrouter') { OpenRouter Key }
                         }
                     </label>
                     <div class="relative">
                         <input 
                             [ngModel]="apiKey()"
                             (ngModelChange)="apiKey.set($event)"
-                            type="password"
+                            [type]="selectedProvider() === 'ollama' ? 'text' : 'password'"
                             class="w-full bg-zinc-900 border border-zinc-800 rounded p-3 text-xs text-zinc-300 focus:outline-none focus:border-indigo-500 transition-colors font-mono"
                             [placeholder]="getPlaceholder()"
                             [disabled]="isTesting()"
@@ -172,6 +176,8 @@ type SettingsTab = 'profile' | 'system';
                             @case('gemini') { Uses 'gemini-2.0-flash'. }
                             @case('openai') { Uses 'gpt-4-turbo'. }
                             @case('anthropic') { Uses 'claude-3-5-sonnet'. }
+                            @case('ollama') { Ensure Ollama is running at localhost:11434. }
+                            @case('openrouter') { Uses Llama 3.1 70B via OpenRouter. }
                         }
                         Stored locally.
                     </p>
@@ -326,7 +332,9 @@ export class SettingsModalComponent {
       const keyMap: Record<AiProvider, string> = {
           'gemini': 'gemini_api_key',
           'openai': 'openai_api_key',
-          'anthropic': 'anthropic_api_key'
+          'anthropic': 'anthropic_api_key',
+          'ollama': 'ollama_model',
+          'openrouter': 'openrouter_api_key'
       };
       this.apiKey.set(localStorage.getItem(keyMap[provider]) || '');
   }
@@ -336,6 +344,8 @@ export class SettingsModalComponent {
           case 'gemini': return 'AI Studio Key (Start with AI...)';
           case 'openai': return 'sk-...';
           case 'anthropic': return 'sk-ant-...';
+          case 'ollama': return 'e.g. llama3, mistral (Default: llama3)';
+          case 'openrouter': return 'sk-or-...';
           default: return 'API Key';
       }
   }
@@ -402,7 +412,10 @@ export class SettingsModalComponent {
 
           // 4. Validate AI Connection
           const isValid = await this.geminiService.validateConnection(key);
-          if (!isValid) throw new Error(`${provider.toUpperCase()} Connection Failed. Check Key.`);
+          if (!isValid) {
+              if (provider === 'ollama') throw new Error(`Ollama Connection Failed. Ensure it's running at http://localhost:11434 with CORS enabled.`);
+              throw new Error(`${provider.toUpperCase()} Connection Failed. Check Key.`);
+          }
 
           this.notification.notify('Success', 'System Configuration Updated', 'success');
           this.close.emit();

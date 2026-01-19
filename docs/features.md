@@ -4,34 +4,35 @@
 ![Feature Set](https://img.shields.io/badge/Features-Complete-green?style=flat-square)
 ![AI Powered](https://img.shields.io/badge/AI-Native-purple?style=flat-square)
 
-## 1. GitHub Intelligence
-ODUS doesn't just list your repos; it reads them.
--   **How to use:** Navigate to the GitHub view, enter a Token, and select a repo. Click **ADD**.
--   **Process:** ODUS pulls the file tree and README, then uses Gemini to "read" the code architecture and generate a project board with "Refactor", "Feature", and "Testing" tasks suited to that specific codebase.
+## 1. Interface Customization (v1.3)
+ODUS adapts to your environment.
+-   **Dark/Light Mode:** Toggle via Settings > Interface.
+-   **Accent Colors:** Choose your vibe (Cyberpunk Cyan, Enterprise Indigo, Alert Red, etc.).
+-   **Telemetry Slide-Up:** Keep your workspace clean. System health stats are hidden in a bottom drawer on the sidebar.
 
-## 2. Risk Analysis
-Stop fire-fighting. Start predicting.
--   **Action:** Inside a project board, click the **Risk Scan** button.
--   **Output:** A Markdown report highlighting:
-    -   Circular Dependencies (Task A waits for B, B waits for A).
-    -   Resource Bottlenecks (Too many tasks due on Friday).
-    -   Missing Specs (High priority tasks with no descriptions).
+## 2. Zen Mode
+Digital decompression.
+-   **Access:** Sidebar > Zen Mode.
+-   **Function:** A blank canvas with interactive particle physics. Designed to help you "reset" visually between complex tasks. Move your mouse to disrupt the particle field.
 
-## 3. Neural Mind Board
-A space for unstructured thinking.
--   **Dual Entry:**
-    1.  **Direct:** Double-click anywhere on the canvas to add a node.
-    2.  **Smart Add:** Items added via the Dashboard are *also* sent here, creating a bridge between structured tasks and unstructured ideas.
--   **AI Tagging:** Type a messy thought like "Need to optimize database queries for the user table."
-    -   *Result:* AI cleans the title to "DB Optimization", tags it `DATABASE`, `PERFORMANCE`, and links it to any existing nodes related to SQL or Users.
--   **Markdown Editor:** Click a node to open a full-screen, distraction-free Markdown editor.
+## 3. Success Roadmap
+Visualizing the path to victory.
+-   **Location:** Dashboard (Right Panel).
+-   **Logic:** Calculates the critical path based on task priority and dependencies.
+-   **Visuals:** Neon-glowing nodes represent high-value targets. Dashed "flow" lines show the optimal sequence of execution.
 
-## 4. Intelligent Focus List
-The Dashboard features a "Founder's Focus" list that aggregates your most important work.
--   **Neon Coding:** Instantly recognize which project a task belongs to via its left-border color.
--   **Quick Actions:** Complete tasks, change priority, or edit metadata directly from the list.
--   **AI Curation:** Let the AI decide what you should work on next based on deadlines and project health.
+## 4. GitHub Intelligence
+ODUS reads your code.
+-   **Terminal UI:** A retro-styled console shows real-time logs of the AI analyzing your repository's file tree, commits, and README.
+-   **Output:** Generates a complete project board with Refactor, Feature, and Bug tasks tailored to your codebase.
 
-## 5. Calendar Intelligence
-The Calendar view isn't just dates.
--   **Daily Briefing:** Click on any day. Gemini analyzes the tasks starting, due, and ongoing for that specific 24-hour period and generates a "Daily Briefing" telling you if it's a `CRUNCH`, `FOCUS`, or `LIGHT` day.
+## 5. Neural Mind Board
+Unstructured thinking, structured by AI.
+-   **Graph View:** Force-directed graph of your ideas.
+-   **Auto-Link:** AI analyzes content to automatically link related nodes.
+-   **Editor:** Distraction-free Markdown writing.
+
+## 6. AI Agent
+-   **Physics Interaction:** Drag and throw the agent bubble anywhere on screen.
+-   **Voice Control:** Speak to create tasks or navigate views.
+-   **File Generation:** Ask "Create a financial projection CSV" and watch it appear in the Data Vault.

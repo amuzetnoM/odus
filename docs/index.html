@@ -62,12 +62,12 @@
     <!-- Header -->
     <header class="border-b border-cyan-900/50 pb-8 mb-12 flex justify-between items-end">
         <div>
-            <div class="text-[10px] text-cyan-600 mb-2">CLASSIFIED // SYSTEM ARCHITECTURE // V1.0</div>
+            <div class="text-[10px] text-cyan-600 mb-2">CLASSIFIED // SYSTEM ARCHITECTURE // V1.3.0</div>
             <h1 class="text-4xl md:text-6xl font-bold tracking-tighter glow-text">ODUS<span class="text-white">_CORE</span></h1>
         </div>
         <div class="text-right text-xs text-cyan-500">
             <div>STATUS: <span class="text-green-400">ONLINE</span></div>
-            <div>LATENCY: <span class="text-green-400">0.01ms</span></div>
+            <div>THEME: <span class="text-white">DYNAMIC</span></div>
             <div>MODE: <span class="text-white">ZONELESS</span></div>
         </div>
     </header>
@@ -85,9 +85,9 @@
                 <div class="blueprint-box p-6 hover:bg-cyan-900/10 transition-colors">
                     <h3 class="text-white font-bold mb-2">USER_INTERFACE</h3>
                     <ul class="text-xs text-cyan-400 space-y-2 list-none">
-                        <li>> Dashboard (Component)</li>
-                        <li>> Project Board (D3/Canvas)</li>
-                        <li>> Voice Agent (WebSpeech)</li>
+                        <li>> Success Roadmap (D3)</li>
+                        <li>> Zen Mode (Canvas Physics)</li>
+                        <li>> Floating Agent (Draggable)</li>
                     </ul>
                 </div>
 
@@ -123,20 +123,20 @@
                         <div class="data-stream w-full"></div>
 
                         <div class="flex items-center gap-4">
-                            <div class="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                            <div class="w-2 h-2 bg-pink-500 rounded-full animate-pulse"></div>
                             <div class="flex-1">
-                                <div class="text-sm text-white font-bold">GEMINI_SERVICE</div>
-                                <div class="text-[10px] text-cyan-600">Intelligence / Reasoning</div>
+                                <div class="text-sm text-white font-bold">THEME_SERVICE</div>
+                                <div class="text-[10px] text-cyan-600">UI State / Styling / Layout</div>
                             </div>
                         </div>
 
                         <div class="data-stream w-full"></div>
 
                         <div class="flex items-center gap-4">
-                            <div class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+                            <div class="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
                             <div class="flex-1">
-                                <div class="text-sm text-white font-bold">MIND_SERVICE</div>
-                                <div class="text-[10px] text-cyan-600">Graph Theory / Links</div>
+                                <div class="text-sm text-white font-bold">GEMINI_SERVICE</div>
+                                <div class="text-[10px] text-cyan-600">Intelligence / Reasoning</div>
                             </div>
                         </div>
                     </div>
@@ -163,51 +163,34 @@
     <!-- Entity Spec -->
     <section class="grid grid-cols-1 md:grid-cols-2 gap-12 mb-24">
         <div>
-            <h2 class="text-xl mb-6 border-l-4 border-cyan-500 pl-4">ENTITY_SPEC: TASK</h2>
+            <h2 class="text-xl mb-6 border-l-4 border-cyan-500 pl-4">ENTITY_SPEC: UI_THEME</h2>
             <div class="blueprint-box p-6 font-mono text-xs leading-relaxed">
 <pre class="text-cyan-300">
-interface Task {
-  id: UUID;
-  title: string;
-  status: 'todo' | 'in-progress' | 'done';
-  priority: 'low' | 'medium' | 'high';
-  
-  // AI Generated
-  aiTags: string[];
-  embeddingVector?: number[];
-  
-  // Relationships
-  dependencyIds: UUID[];
-  attachmentIds: UUID[];
-  
-  // Meta
-  inFocusList: boolean; // Founder's Focus
-  focusIndex: number;
+interface ThemeState {
+  mode: 'dark' | 'light';
+  accent: 'indigo' | 'cyan' | 'rose' | ...;
+  sidebarWidth: number;
+  isMobile: boolean;
 }
 </pre>
             </div>
         </div>
         <div>
-            <h2 class="text-xl mb-6 border-l-4 border-cyan-500 pl-4">AI_PIPELINE</h2>
+            <h2 class="text-xl mb-6 border-l-4 border-cyan-500 pl-4">AI_PIPELINE (V2)</h2>
             <div class="space-y-4">
                 <div class="flex items-center gap-4">
                     <div class="w-8 h-8 flex items-center justify-center border border-cyan-500 rounded text-cyan-500">1</div>
-                    <div class="flex-1 p-2 bg-cyan-900/20 border border-cyan-900/50 text-xs">USER PROMPT -> "Create marketing plan"</div>
+                    <div class="flex-1 p-2 bg-cyan-900/20 border border-cyan-900/50 text-xs">USER ACTION -> "Create File"</div>
                 </div>
                 <div class="h-4 w-px bg-cyan-500 ml-4"></div>
                 <div class="flex items-center gap-4">
                     <div class="w-8 h-8 flex items-center justify-center border border-cyan-500 rounded text-cyan-500">2</div>
-                    <div class="flex-1 p-2 bg-cyan-900/20 border border-cyan-900/50 text-xs">GEMINI FLASH 2.0 -> STRUCTURAL ANALYSIS</div>
+                    <div class="flex-1 p-2 bg-cyan-900/20 border border-cyan-900/50 text-xs">GEMINI FLASH 2.0 -> Tool Call Detection</div>
                 </div>
                 <div class="h-4 w-px bg-cyan-500 ml-4"></div>
                 <div class="flex items-center gap-4">
-                    <div class="w-8 h-8 flex items-center justify-center border border-cyan-500 rounded text-cyan-500">3</div>
-                    <div class="flex-1 p-2 bg-cyan-900/20 border border-cyan-900/50 text-xs">JSON HYDRATION -> ProjectService.addProject()</div>
-                </div>
-                 <div class="h-4 w-px bg-cyan-500 ml-4"></div>
-                <div class="flex items-center gap-4">
-                    <div class="w-8 h-8 flex items-center justify-center border border-white text-white bg-cyan-600">4</div>
-                    <div class="flex-1 p-2 bg-cyan-500/20 border border-cyan-500 text-xs text-white">UI UPDATE (ZONELESS SIGNAL)</div>
+                    <div class="w-8 h-8 flex items-center justify-center border border-white text-white bg-cyan-600">3</div>
+                    <div class="flex-1 p-2 bg-cyan-500/20 border border-cyan-500 text-xs text-white">GENERATIVE UI -> &lt;file-preview&gt; Component</div>
                 </div>
             </div>
         </div>
