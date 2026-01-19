@@ -16,7 +16,7 @@ import { Task } from '../services/project.service';
     >
       <!-- Header: Title -->
       <div class="flex justify-between items-start">
-        <h4 class="font-normal text-zinc-200 text-xs leading-tight tracking-wide group-hover:text-white transition-colors">{{ task().title }}</h4>
+        <h4 class="font-normal text-zinc-200 text-xs leading-tight tracking-wide group-hover:text-white transition-colors" title="{{ task().title }}">{{ displayTitle() }}</h4>
       </div>
 
       <!-- Description -->

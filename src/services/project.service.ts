@@ -143,6 +143,64 @@ export class ProjectService {
       setInterval(() => this.checkDeadlines(), 60000);
   }
 
+  /**
+   * Normalize & sanitize task fields to ensure titles are concise and descriptions are preserved.
+   * - Strips markdown-like tokens from titles
+   * - Moves overflow / trailing content from long titles into description
+   * - Truncates long titles to a sensible limit
+   */
+  private normalizeTask(input: Partial<Task>): Partial<Task> {
+      const out: Partial<Task> = { ...input };
+      let title = (out.title || '').trim();
+      let description = (out.description || '').trim();
+
+      // Remove common markdown tokens and collapse whitespace
+      title = title.replace(/[`*_~#>]+/g, '').replace(/\s+/g, ' ').trim();
+
+      // If title contains a leading portion of the description, remove it from the title
+      if (description) {
+          const descSample = description.slice(0, 120);
+          if (descSample && title.includes(descSample)) {
+              title = title.replace(descSample, '').trim();
+          }
+      }
+
+      // If separator used in title (" - ", " — ", ":") and no explicit description, split it
+      const sepMatch = title.match(/(.+?)(?:\s[-—:]\s)(.+)/);
+      if (sepMatch && !description) {
+          title = sepMatch[1].trim();
+          description = sepMatch[2].trim();
+      }
+
+      // Move overflow from very long titles into description when appropriate
+      if (title.length > 120) {
+          const parts = title.split(/\n+/);
+          if (parts.length > 1) {
+              const head = parts.shift()!.trim();
+              const tail = parts.join(' ').trim();
+              if (!description) description = tail;
+              title = head;
+          } else {
+              const sentenceEdge = title.match(/(.{0,120}?([.?!]|$))/);
+              if (sentenceEdge && sentenceEdge[0].trim().length < title.length) {
+                  const head = sentenceEdge[0].trim();
+                  const tail = title.slice(head.length).trim();
+                  if (!description) description = tail;
+                  title = head;
+              } else {
+                  title = title.slice(0, 100).trim() + '…';
+              }
+          }
+      } else if (title.length > 80) {
+          title = title.slice(0, 80).trim() + '…';
+      }
+
+      out.title = title || 'Untitled Task';
+      out.description = description || out.description || '';
+
+      return out;
+  }
+
   private checkDeadlines() {
       const all = this.allTasks();
       const now = new Date();
@@ -195,16 +253,20 @@ export class ProjectService {
       id: crypto.randomUUID(),
       title,
       description,
-      tasks: tasks.map(t => ({
-        ...t,
-        // Preserve existing ID if present (for dependencies to work), otherwise generate new one
-        id: t.id || crypto.randomUUID(),
-        createdAt: t.createdAt || new Date().toISOString(),
-        status: t.status || 'todo',
-        priority: t.priority || 'medium',
-        // Ensure dependencyIds is preserved
-        dependencyIds: t.dependencyIds || []
-      } as Task)),
+      tasks: tasks.map(t => {
+        const base: Task = {
+          ...t,
+          // Preserve existing ID if present (for dependencies to work), otherwise generate new one
+          id: t.id || crypto.randomUUID(),
+          createdAt: t.createdAt || new Date().toISOString(),
+          status: t.status || 'todo',
+          priority: t.priority || 'medium',
+          // Ensure dependencyIds is preserved
+          dependencyIds: t.dependencyIds || []
+        } as Task;
+        const sanitized = this.normalizeTask(base) as Task;
+        return sanitized;
+      }),
       createdAt: new Date().toISOString(),
       color: randomColor
     };
@@ -281,12 +343,13 @@ export class ProjectService {
   }
 
   addTask(projectId: string, task: Omit<Task, 'id' | 'createdAt'>) {
+    const sanitizedInput = this.normalizeTask(task) as Omit<Task, 'id' | 'createdAt'>;
     const newTask: Task = { 
-        ...task, 
+        ...sanitizedInput, 
         id: crypto.randomUUID(),
         createdAt: new Date().toISOString(),
-        inFocusList: task.inFocusList ?? false,
-        focusIndex: task.focusIndex ?? 9999
+        inFocusList: sanitizedInput.inFocusList ?? false,
+        focusIndex: sanitizedInput.focusIndex ?? 9999
     };
     
     if (projectId === 'personal') {
@@ -345,10 +408,11 @@ export class ProjectService {
   }
 
   addTasksToProject(projectId: string, tasks: Task[]) {
+     const sanitized = tasks.map(t => this.normalizeTask(t) as Task);
      this.projectsState.update(projects => 
         projects.map(p => {
             if (p.id === projectId) {
-                return { ...p, tasks: [...p.tasks, ...tasks] };
+                return { ...p, tasks: [...p.tasks, ...sanitized] };
             }
             return p;
         })
