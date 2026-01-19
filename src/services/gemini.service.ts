@@ -423,9 +423,16 @@ export class GeminiService {
       2. Key priorities for the day (if any high-priority tasks)
       3. A brief recommendation or insight
       
-      Format the briefing as a single paragraph with proper structure, using 2-4 sentences. Be professional and actionable.
+      Format the briefing using **Markdown** formatting:
+      - Use **bold** for emphasis on important items
+      - Use bullet points for lists of priorities
+      - Use inline code formatting for specific task names or technical terms
+      - Structure with proper paragraphs (2-4 sentences total)
+      - Be professional and actionable
       
-      Return JSON: { "briefing": "string", "dayType": "FOCUS" | "CRUNCH" | "BALANCED" | "LIGHT" | "REST" }
+      Example: "**Today's Focus**: You have 3 tasks starting, including **API Integration**. Priority is on completing user-auth module. Recommend tackling high-priority items first."
+      
+      Return JSON: { "briefing": "string (markdown formatted)", "dayType": "FOCUS" | "CRUNCH" | "BALANCED" | "LIGHT" | "REST" }
       
       dayType definitions:
       - FOCUS: 1-3 high-priority tasks, manageable workload
@@ -493,7 +500,14 @@ export class GeminiService {
   }
 
   async suggestNextTask(currentTasks: any[]): Promise<any> {
-      const prompt = `Tasks: ${JSON.stringify(currentTasks.map(t => t.title))}. Suggest 1 missing task. JSON: { "title": "", "description": "", "priority": "medium", "tags": [] }`;
+      const prompt = `Tasks: ${JSON.stringify(currentTasks.map(t => t.title))}. Suggest 1 missing task. 
+      
+      FORMAT DESCRIPTION IN MARKDOWN:
+      - Use **bold** for key concepts
+      - Use inline code formatting for technical terms
+      - Use bullet points for steps or requirements
+      
+      JSON: { "title": "", "description": "markdown formatted string", "priority": "medium", "tags": [] }`;
       try {
           const text = await this.generateText(prompt, "Project Assistant.", this.provider === 'gemini' ? {
               type: Type.OBJECT, properties: { 
@@ -548,11 +562,15 @@ CRITICAL REQUIREMENTS:
    - Create logical dependency chains: setup → implementation → testing → deployment
    - Example: Task 3 depends on tasks 0 and 1: "dependsOn": [0, 1]
 
-7. RICH DESCRIPTIONS:
-   - Each task description should be detailed (50-200 chars)
+7. RICH DESCRIPTIONS (MARKDOWN FORMATTED):
+   - Each task description MUST be formatted in Markdown
+   - Use **bold** for key terms and important concepts
+   - Use bullet points (- item) for lists
+   - Use inline code formatting for technical terms, file names, functions
    - Include technical context from the codebase
    - Reference specific files or modules when relevant
    - Describe WHY the task is important, not just WHAT
+   - Example: "Implement **user authentication** system using JWT tokens. Key files: auth.service.ts, user.model.ts. Critical for securing API endpoints."
 
 8. SCHEDULING:
    - Assign realistic durationDays (2-14 days based on complexity)
@@ -729,6 +747,14 @@ Return ONLY valid JSON matching this structure:
         - Use metrics to gauge project health
         
         Be conversational, helpful, and leverage the full workspace context to provide intelligent assistance.
+        
+        RESPONSE FORMATTING:
+        - Use **Markdown** formatting in all responses
+        - Use **bold** for emphasis on key points
+        - Use bullet points (- item) for lists
+        - Use inline code formatting for technical terms, file names, commands
+        - Use code blocks for longer code snippets
+        - Structure responses with proper paragraphs for readability
       `;
 
       // 1. Google Gemini (Native Chat)
