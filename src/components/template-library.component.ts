@@ -5,6 +5,8 @@ import { TemplateLibraryService, ProjectTemplate } from '../services/template-li
 import { ProjectService } from '../services/project.service';
 import { NotificationService } from '../services/notification.service';
 
+const DEFAULT_TASK_DURATION_DAYS = 3;
+
 @Component({
   selector: 'app-template-library',
   standalone: true,
@@ -218,7 +220,7 @@ export class TemplateLibraryComponent {
       const tasksWithDates = template.tasks.map((task, index) => ({
         ...task,
         startDate: new Date(today.getTime() + index * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        endDate: new Date(today.getTime() + (index + 3) * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        endDate: new Date(today.getTime() + (index + DEFAULT_TASK_DURATION_DAYS) * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       }));
 
       await this.projectService.addProject(

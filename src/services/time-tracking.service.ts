@@ -27,6 +27,10 @@ export interface VelocityMetrics {
   averageTaskDuration: number;
 }
 
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+const MILLISECONDS_PER_WEEK = 7 * MILLISECONDS_PER_DAY;
+const MILLISECONDS_PER_MONTH = 30 * MILLISECONDS_PER_DAY;
+
 @Injectable({
   providedIn: 'root'
 })
@@ -53,9 +57,9 @@ export class TimeTrackingService {
   readonly velocityMetrics = computed<VelocityMetrics>(() => {
     const logs = this.timeLogsState();
     const now = new Date();
-    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const oneDayAgo = new Date(now.getTime() - MILLISECONDS_PER_DAY);
+    const oneWeekAgo = new Date(now.getTime() - MILLISECONDS_PER_WEEK);
+    const oneMonthAgo = new Date(now.getTime() - MILLISECONDS_PER_MONTH);
 
     const dailyLogs = logs.filter(log => log.endTime && new Date(log.endTime) >= oneDayAgo);
     const weeklyLogs = logs.filter(log => log.endTime && new Date(log.endTime) >= oneWeekAgo);

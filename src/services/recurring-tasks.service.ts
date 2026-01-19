@@ -5,6 +5,8 @@ import { NotificationService } from './notification.service';
 
 export type RecurrenceFrequency = 'daily' | 'weekly' | 'monthly';
 
+const HOUR_IN_MILLISECONDS = 60 * 60 * 1000;
+
 export interface RecurringTask {
   id: string;
   templateTaskId: string;
@@ -63,7 +65,7 @@ export class RecurringTasksService implements OnDestroy {
     this.checkAndCreateTasks();
     this.checkInterval = setInterval(() => {
       this.checkAndCreateTasks();
-    }, 60 * 60 * 1000);
+    }, HOUR_IN_MILLISECONDS);
   }
 
   private checkAndCreateTasks() {
