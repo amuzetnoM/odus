@@ -277,7 +277,7 @@ export class AppComponent {
   appControlService = inject(AppControlService);
   notificationService = inject(NotificationService);
   
-  showLanding = signal(true);
+  showLanding = signal(false); // Changed to false to skip landing page - use landing.html separately
   showCreateModal = signal(false);
   showSettingsModal = signal(false);
   showNotifications = signal(false);
