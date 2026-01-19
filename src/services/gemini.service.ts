@@ -675,12 +675,18 @@ Return ONLY valid JSON matching this structure:
         Available Tools:
         - create_project: {"title": "...", "description": "..."}
         - delete_project: {"projectId": "..."}
-        - create_task: {"projectId": "...", "title": "...", "addToFocus": boolean}
+        - create_task: {"projectId": "...", "title": "...", "description": "...", "priority": "low|medium|high", "addToFocus": boolean}
         - delete_task: {"projectId": "...", "taskId": "..."}
-        - update_task_status: {"projectId": "...", "taskId": "...", "status": "todo|in-progress|done"}
-        - create_file: {"name": "...", "content": "...", "type": "csv|markdown"}
+        - update_task_status: {"taskTitle": "...", "newStatus": "todo|in-progress|done"}
+        - update_task: {"projectId": "...", "taskId": "...", "updates": {"title"?: "...", "description"?: "...", "priority"?: "...", "startDate"?: "...", "endDate"?: "..."}}
+        - curate_focus_list: {} - AI will analyze all tasks and select the top 5 most important ones for the focus list
+        - add_task_to_focus: {"taskId": "...", "projectId": "..."}
+        - remove_task_from_focus: {"taskId": "...", "projectId": "..."}
+        - create_file: {"filename": "...", "content": "...", "mimeType": "text/csv|text/markdown"}
         - navigate: {"view": "dashboard|projects|mind|drive|github|calendar"}
         - create_mind_node: {"content": "...", "tags": []}
+        - link_task_to_mind_node: {"taskId": "...", "projectId": "...", "nodeId": "..."} - Creates a connection between a task and a mind map node
+        - analyze_repository: {"owner": "...", "repo": "..."} - Analyzes a GitHub repository and creates a project
         
         INTELLIGENCE:
         - Reference the unified workspace context to understand relationships

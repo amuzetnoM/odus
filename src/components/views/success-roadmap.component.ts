@@ -100,39 +100,70 @@ export class SuccessRoadmapComponent implements OnDestroy {
             return;
         }
 
-        // 2. Identify Critical Path (Robust Heuristics)
+        // 2. Identify Critical Path (Improved Algorithm)
         const criticalSet = new Set<string>();
-
-        // Sort by date to understand flow
-        const sortedByDate = [...activeTasks].sort((a,b) => {
+        
+        // Build dependency graph for topological analysis
+        const depGraph = new Map<string, Set<string>>();
+        const reverseDeps = new Map<string, Set<string>>();
+        
+        activeTasks.forEach(t => {
+            depGraph.set(t.id, new Set(t.dependencyIds || []));
+            if (!reverseDeps.has(t.id)) reverseDeps.set(t.id, new Set());
+            
+            (t.dependencyIds || []).forEach((depId: string) => {
+                if (!reverseDeps.has(depId)) reverseDeps.set(depId, new Set());
+                reverseDeps.get(depId)!.add(t.id);
+            });
+        });
+        
+        // Calculate task weights (importance score)
+        const taskWeights = new Map<string, number>();
+        activeTasks.forEach(t => {
+            let weight = 0;
+            
+            // Priority contributes most
+            if (t.priority === 'high') weight += 10;
+            else if (t.priority === 'medium') weight += 5;
+            else weight += 2;
+            
+            // Focus list status
+            if (t.inFocusList) weight += 8;
+            
+            // Number of dependents (blocking power)
+            weight += (reverseDeps.get(t.id)?.size || 0) * 3;
+            
+            // Urgency (due date proximity)
+            if (t.endDate) {
+                const daysUntilDue = Math.ceil((new Date(t.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                if (daysUntilDue < 7) weight += 5;
+                else if (daysUntilDue < 14) weight += 3;
+            }
+            
+            taskWeights.set(t.id, weight);
+        });
+        
+        // Select top weighted tasks for critical path
+        const sortedByWeight = [...taskWeights.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, Math.min(8, Math.max(3, Math.ceil(activeTasks.length * 0.3))));
+        
+        sortedByWeight.forEach(([id]) => criticalSet.add(id));
+        
+        // Ensure critical path includes in-focus tasks
+        activeTasks.filter(t => t.inFocusList).forEach(t => criticalSet.add(t.id));
+        
+        // Sort by date for timeline flow
+        const sortedByDate = [...activeTasks].sort((a, b) => {
             const da = a.endDate ? new Date(a.endDate).getTime() : 0;
             const db = b.endDate ? new Date(b.endDate).getTime() : 0;
             return da - db;
         });
-
-        // Pass 1: High Priority (Explicit Business Value)
-        activeTasks.filter(t => t.priority === 'high').forEach(t => criticalSet.add(t.id));
-
-        // Pass 2: Structural Hubs (If roadmap is too thin)
-        if (criticalSet.size < 3) {
-            const blockedCounts = new Map<string, number>();
-            activeTasks.forEach(t => {
-                (t.dependencyIds || []).forEach((depId: string) => {
-                    blockedCounts.set(depId, (blockedCounts.get(depId) || 0) + 1);
-                });
-            });
-            // Add top blockers
-            [...blockedCounts.entries()]
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 3)
-                .forEach(([id]) => criticalSet.add(id));
-        }
-
-        // Pass 3: Temporal Spine (Ensure we have a beginning, middle, and end)
-        if (criticalSet.size < 3 && sortedByDate.length > 0) {
-            criticalSet.add(sortedByDate[0].id); // Start
-            if (sortedByDate.length > 2) criticalSet.add(sortedByDate[Math.floor(sortedByDate.length / 2)].id); // Middle
-            criticalSet.add(sortedByDate[sortedByDate.length - 1].id); // End
+        
+        // Ensure we have beginning and end if nothing selected
+        if (criticalSet.size === 0 && sortedByDate.length > 0) {
+            criticalSet.add(sortedByDate[0].id);
+            criticalSet.add(sortedByDate[sortedByDate.length - 1].id);
         }
 
         // 3. Build Nodes & Links
