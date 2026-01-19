@@ -26,7 +26,17 @@ export class GeminiService {
   private persistence = inject(PersistenceService);
 
   constructor() {
-    this.ai = new GoogleGenAI({ apiKey: process.env['API_KEY'] || '' });
+    this.init();
+  }
+
+  private init() {
+    const key = localStorage.getItem('gemini_api_key') || process.env['API_KEY'] || '';
+    this.ai = new GoogleGenAI({ apiKey: key });
+  }
+
+  updateApiKey(key: string) {
+    localStorage.setItem('gemini_api_key', key);
+    this.init();
   }
 
   // --- Smart Features ---

@@ -1,259 +1,220 @@
 
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ODUS AI | Next-Gen Project Intelligence</title>
+    <title>ODUS SYSTEM BLUEPRINTS</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;800&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100;300;500;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #09090b; /* Zinc 950 */
-            color: #e4e4e7; /* Zinc 200 */
+            background-color: #050505;
+            color: #00e5ff;
+            font-family: 'JetBrains Mono', monospace;
             overflow-x: hidden;
-        }
-        
-        /* Smooth Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #09090b; }
-        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
-
-        /* Parallax & Animations */
-        .parallax-bg {
             background-image: 
-                radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(9,9,11,0) 0%, rgba(9,9,11,1) 90%);
-            background-size: 40px 40px, 100% 100%;
-            transform: translateZ(-10px) scale(2);
+                linear-gradient(rgba(0, 229, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 229, 255, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
         }
 
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
-            100% { transform: translateY(0px); }
+        .blueprint-box {
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            background: rgba(0, 20, 30, 0.8);
+            position: relative;
         }
+
+        .blueprint-box::before, .blueprint-box::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #00e5ff;
+            transition: all 0.3s ease;
+        }
+        .blueprint-box::before { top: -2px; left: -2px; }
+        .blueprint-box::after { bottom: -2px; right: -2px; }
+
+        .connector {
+            position: absolute;
+            background: rgba(0, 229, 255, 0.2);
+            z-index: -1;
+        }
+
+        .glow-text { text-shadow: 0 0 10px rgba(0, 229, 255, 0.5); }
         
-        @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 20px rgba(255,255,255,0.1); }
-            50% { box-shadow: 0 0 40px rgba(255,255,255,0.2); }
+        /* Schematic Line Animation */
+        @keyframes flow {
+            0% { background-position: 0 0; }
+            100% { background-position: 20px 0; }
         }
-
-        .animate-float { animation: float 6s ease-in-out infinite; }
-        .glass-panel {
-            background: rgba(24, 24, 27, 0.4);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+        .data-stream {
+            height: 2px;
+            background: repeating-linear-gradient(90deg, #00e5ff 0, #00e5ff 4px, transparent 4px, transparent 8px);
+            animation: flow 1s linear infinite;
+            opacity: 0.5;
         }
-
-        .text-glow { text-shadow: 0 0 30px rgba(255,255,255,0.2); }
     </style>
 </head>
-<body class="antialiased selection:bg-indigo-500/30">
+<body class="p-8">
 
-    <!-- Navigation -->
-    <nav class="fixed top-0 w-full z-50 glass-panel border-b-0 border-white/5">
-        <div class="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 bg-white text-black flex items-center justify-center font-bold text-xs rounded-sm">O</div>
-                <span class="font-light tracking-[0.3em] text-sm text-white">ODUS</span>
-            </div>
-            <div class="hidden md:flex gap-8 text-xs font-medium uppercase tracking-widest text-zinc-500">
-                <a href="#features" class="hover:text-white transition-colors">Capabilities</a>
-                <a href="#architecture" class="hover:text-white transition-colors">Architecture</a>
-                <a href="getting-started.md" class="hover:text-white transition-colors">Docs</a>
-            </div>
-            <a href="https://odus-ai-project-manager-937668381187.us-west1.run.app" target="_blank" class="px-6 py-2 bg-white text-black text-xs font-bold uppercase tracking-widest rounded hover:scale-105 transition-transform">
-                Launch App
-            </a>
+    <!-- Header -->
+    <header class="border-b border-cyan-900/50 pb-8 mb-12 flex justify-between items-end">
+        <div>
+            <div class="text-[10px] text-cyan-600 mb-2">CLASSIFIED // SYSTEM ARCHITECTURE // V1.0</div>
+            <h1 class="text-4xl md:text-6xl font-bold tracking-tighter glow-text">ODUS<span class="text-white">_CORE</span></h1>
         </div>
-    </nav>
-
-    <!-- Hero Section -->
-    <header class="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
-        <!-- Abstract Background Elements -->
-        <div class="absolute inset-0 z-0">
-            <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-900/20 rounded-full blur-[120px] animate-float"></div>
-            <div class="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-zinc-800/20 rounded-full blur-[100px]" style="animation-delay: -3s"></div>
-            <div class="absolute inset-0 parallax-bg opacity-40"></div>
-        </div>
-
-        <div class="relative z-10 text-center max-w-4xl px-6">
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] uppercase tracking-widest text-zinc-400 mb-8 backdrop-blur-md">
-                <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                System Operational v1.0
-            </div>
-            
-            <h1 class="text-5xl md:text-8xl font-thin tracking-tighter text-white mb-6 text-glow">
-                PROJECT MGT <br />
-                <span class="font-serif italic text-zinc-500">REIMAGINED</span>
-            </h1>
-            
-            <p class="text-zinc-400 text-lg md:text-xl font-light max-w-2xl mx-auto mb-10 leading-relaxed">
-                A zoneless, AI-native workspace. Generate project structures, visualize relationships, and predict risks before they happen.
-            </p>
-
-            <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="https://odus-ai-project-manager-937668381187.us-west1.run.app" target="_blank" class="px-8 py-4 bg-white text-black text-sm font-bold uppercase tracking-widest rounded hover:bg-zinc-200 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.2)]">
-                    Initialize System
-                </a>
-                <a href="#features" class="px-8 py-4 border border-white/10 bg-white/5 text-white text-sm font-bold uppercase tracking-widest rounded hover:bg-white/10 transition-colors backdrop-blur-md">
-                    Explore Data
-                </a>
-            </div>
-        </div>
-        
-        <!-- Scroll Indicator -->
-        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce text-zinc-600">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+        <div class="text-right text-xs text-cyan-500">
+            <div>STATUS: <span class="text-green-400">ONLINE</span></div>
+            <div>LATENCY: <span class="text-green-400">0.01ms</span></div>
+            <div>MODE: <span class="text-white">ZONELESS</span></div>
         </div>
     </header>
 
-    <!-- Feature Grid (Bento Box Style) -->
-    <section id="features" class="py-32 relative z-10 bg-zinc-950">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="mb-20">
-                <h2 class="text-sm font-bold text-zinc-500 uppercase tracking-widest mb-2">Core Capabilities</h2>
-                <h3 class="text-4xl font-light text-white">Intelligence baked into every pixel.</h3>
+    <!-- Main Architecture Diagram -->
+    <section id="architecture" class="mb-24 relative min-h-[600px]">
+        <h2 class="text-xl mb-12 border-l-4 border-cyan-500 pl-4">LOGIC_FLOW_DIAGRAM</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-12 relative z-10">
+            
+            <!-- INPUT LAYER -->
+            <div class="flex flex-col gap-6">
+                <div class="text-center text-xs text-cyan-700 mb-2">INPUT_LAYER</div>
+                
+                <div class="blueprint-box p-6 hover:bg-cyan-900/10 transition-colors">
+                    <h3 class="text-white font-bold mb-2">USER_INTERFACE</h3>
+                    <ul class="text-xs text-cyan-400 space-y-2 list-none">
+                        <li>> Dashboard (Component)</li>
+                        <li>> Project Board (D3/Canvas)</li>
+                        <li>> Voice Agent (WebSpeech)</li>
+                    </ul>
+                </div>
+
+                <div class="h-8 w-px bg-cyan-500/30 mx-auto"></div>
+
+                <div class="blueprint-box p-6 border-dashed border-cyan-500/30">
+                    <h3 class="text-white font-bold mb-2">EXTERNAL_DATA</h3>
+                    <ul class="text-xs text-cyan-400 space-y-2">
+                        <li>> GitHub API (Rest)</li>
+                        <li>> File System (Drag/Drop)</li>
+                    </ul>
+                </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 grid-rows-2 gap-6 h-auto md:h-[800px]">
-                
-                <!-- Feature 1: AI Generation -->
-                <div class="md:col-span-2 glass-panel rounded-2xl p-8 relative overflow-hidden group hover:border-white/20 transition-colors">
-                    <div class="absolute top-0 right-0 p-8 opacity-20 group-hover:opacity-40 transition-opacity">
-                        <svg class="w-32 h-32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="0.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                    </div>
-                    <h4 class="text-2xl font-light text-white mb-4">Generative Infrastructure</h4>
-                    <p class="text-zinc-400 font-light max-w-md">Don't start from scratch. Describe your goal, and ODUS constructs a complete project roadmap, tasks, and dependencies using Gemini 2.5 Flash.</p>
-                    <div class="mt-8 grid grid-cols-2 gap-4">
-                        <div class="bg-black/50 p-4 rounded border border-white/5 text-xs font-mono text-zinc-500">
-                            > User Input: "Build a React App"<br/>
-                            <span class="text-green-500">> Generating 12 Tasks...</span><br/>
-                            <span class="text-green-500">> Linking Dependencies...</span>
+            <!-- PROCESSING CORE -->
+            <div class="flex flex-col justify-center relative">
+                <!-- Connectors -->
+                <div class="hidden md:block absolute top-1/2 -left-6 w-6 h-px bg-cyan-500"></div>
+                <div class="hidden md:block absolute top-1/2 -right-6 w-6 h-px bg-cyan-500"></div>
+
+                <div class="blueprint-box p-8 border-2 border-white/20 shadow-[0_0_30px_rgba(0,229,255,0.1)]">
+                    <div class="absolute -top-3 left-4 bg-[#050505] px-2 text-xs text-white font-bold">ANGULAR_SIGNALS_CORE</div>
+                    
+                    <div class="space-y-6">
+                        <div class="flex items-center gap-4">
+                            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                            <div class="flex-1">
+                                <div class="text-sm text-white font-bold">PROJECT_SERVICE</div>
+                                <div class="text-[10px] text-cyan-600">State Management / CRUD</div>
+                            </div>
+                        </div>
+
+                        <div class="data-stream w-full"></div>
+
+                        <div class="flex items-center gap-4">
+                            <div class="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                            <div class="flex-1">
+                                <div class="text-sm text-white font-bold">GEMINI_SERVICE</div>
+                                <div class="text-[10px] text-cyan-600">Intelligence / Reasoning</div>
+                            </div>
+                        </div>
+
+                        <div class="data-stream w-full"></div>
+
+                        <div class="flex items-center gap-4">
+                            <div class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+                            <div class="flex-1">
+                                <div class="text-sm text-white font-bold">MIND_SERVICE</div>
+                                <div class="text-[10px] text-cyan-600">Graph Theory / Links</div>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Feature 2: Mind Board -->
-                <div class="md:col-span-1 glass-panel rounded-2xl p-8 flex flex-col justify-between group hover:border-white/20 transition-colors">
-                    <div>
-                        <h4 class="text-xl font-light text-white mb-2">Neural Mind Board</h4>
-                        <p class="text-zinc-400 text-sm font-light">D3.js powered force-directed graphs link your ideas semantically.</p>
-                    </div>
-                    <div class="w-full h-32 bg-zinc-900/50 rounded border border-white/5 relative overflow-hidden mt-4">
-                        <!-- Simulated Graph -->
-                        <div class="absolute inset-0 flex items-center justify-center">
-                            <div class="w-3 h-3 bg-white rounded-full shadow-[0_0_10px_white]"></div>
-                            <div class="absolute w-20 h-[1px] bg-zinc-700 rotate-45"></div>
-                            <div class="absolute top-4 right-10 w-2 h-2 bg-zinc-600 rounded-full"></div>
-                            <div class="absolute bottom-4 left-10 w-2 h-2 bg-zinc-600 rounded-full"></div>
-                        </div>
-                    </div>
-                </div>
+            <!-- PERSISTENCE LAYER -->
+            <div class="flex flex-col justify-center gap-6">
+                 <div class="text-center text-xs text-cyan-700 mb-2">PERSISTENCE_LAYER</div>
 
-                <!-- Feature 3: Risk Analysis -->
-                <div class="md:col-span-1 glass-panel rounded-2xl p-8 group hover:border-white/20 transition-colors">
-                    <h4 class="text-xl font-light text-white mb-2">Predictive Risk</h4>
-                    <p class="text-zinc-400 text-sm font-light mb-6">AI scans your Gantt charts and dependency trees to flag circular logic and bottlenecks.</p>
-                    <div class="flex items-center gap-3 text-xs font-mono text-red-400 bg-red-950/20 p-2 rounded border border-red-900/30">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                        CRITICAL PATH BLOCK DETECTED
+                 <div class="blueprint-box p-6 bg-black/50">
+                    <h3 class="text-white font-bold mb-2">INDEXED_DB</h3>
+                    <div class="grid grid-cols-2 gap-2 text-[10px] text-cyan-500 font-mono">
+                        <div class="border border-cyan-900 p-1">STORE: repos</div>
+                        <div class="border border-cyan-900 p-1">STORE: files</div>
+                        <div class="border border-cyan-900 p-1">STORE: ai_mem</div>
+                        <div class="border border-cyan-900 p-1">STORE: meta</div>
                     </div>
-                </div>
-
-                <!-- Feature 4: GitHub Integration -->
-                <div class="md:col-span-2 glass-panel rounded-2xl p-8 relative overflow-hidden group hover:border-white/20 transition-colors">
-                     <div class="absolute -right-10 -bottom-10 opacity-10">
-                        <svg class="w-64 h-64" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-                     </div>
-                     <h4 class="text-2xl font-light text-white mb-4">Deep GitHub Analysis</h4>
-                     <p class="text-zinc-400 font-light max-w-lg mb-6">ODUS pulls your repo, reads the README, scans the file tree, and converts your codebase into actionable tickets automatically.</p>
-                     <div class="flex gap-4">
-                         <div class="px-3 py-1 bg-zinc-900 rounded border border-white/5 text-[10px] text-zinc-500 font-mono">Commit History</div>
-                         <div class="px-3 py-1 bg-zinc-900 rounded border border-white/5 text-[10px] text-zinc-500 font-mono">File Tree</div>
-                         <div class="px-3 py-1 bg-zinc-900 rounded border border-white/5 text-[10px] text-zinc-500 font-mono">Context Map</div>
-                     </div>
-                </div>
+                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Architecture Section -->
-    <section id="architecture" class="py-20 bg-zinc-900 border-t border-white/5">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-                <div>
-                    <h2 class="text-sm font-bold text-zinc-500 uppercase tracking-widest mb-2">Under the Hood</h2>
-                    <h3 class="text-3xl font-light text-white mb-6">Zoneless. Stateless. Limitless.</h3>
-                    <ul class="space-y-4 text-zinc-400 font-light">
-                        <li class="flex items-center gap-3">
-                            <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
-                            Built on Angular 18+ Signals Architecture.
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
-                            Local-First persistence via IndexedDB wrappers.
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
-                            Seamless integration with Google Gemini 2.5 Flash.
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
-                            Tailwind CSS for zero-runtime styling overhead.
-                        </li>
-                    </ul>
-                    
-                    <div class="mt-8">
-                        <a href="architecture.md" class="text-xs font-bold uppercase tracking-widest text-white border-b border-white pb-1 hover:text-indigo-400 hover:border-indigo-400 transition-colors">Read Technical Docs -></a>
-                    </div>
-                </div>
-                <div class="glass-panel p-6 rounded-xl font-mono text-[10px] text-zinc-500 leading-relaxed overflow-hidden">
-<pre>
-// ProjectService.ts
-@Injectable({ providedIn: 'root' })
-export class ProjectService {
-  private projectsState = signal<Project[]>([]);
+    <!-- Entity Spec -->
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-12 mb-24">
+        <div>
+            <h2 class="text-xl mb-6 border-l-4 border-cyan-500 pl-4">ENTITY_SPEC: TASK</h2>
+            <div class="blueprint-box p-6 font-mono text-xs leading-relaxed">
+<pre class="text-cyan-300">
+interface Task {
+  id: UUID;
+  title: string;
+  status: 'todo' | 'in-progress' | 'done';
+  priority: 'low' | 'medium' | 'high';
   
-  // Computed Signals for Performance
-  readonly metrics = computed(() => {
-     const all = this.allTasks();
-     // ... O(n) analysis
-     return { health, velocity, risk };
-  });
-
-  constructor() {
-     // Zoneless Reactivity
-     effect(() => {
-        this.persistence.save(this.projectsState());
-     });
-  }
+  // AI Generated
+  aiTags: string[];
+  embeddingVector?: number[];
+  
+  // Relationships
+  dependencyIds: UUID[];
+  attachmentIds: UUID[];
+  
+  // Meta
+  inFocusList: boolean; // Founder's Focus
+  focusIndex: number;
 }
 </pre>
+            </div>
+        </div>
+        <div>
+            <h2 class="text-xl mb-6 border-l-4 border-cyan-500 pl-4">AI_PIPELINE</h2>
+            <div class="space-y-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-8 h-8 flex items-center justify-center border border-cyan-500 rounded text-cyan-500">1</div>
+                    <div class="flex-1 p-2 bg-cyan-900/20 border border-cyan-900/50 text-xs">USER PROMPT -> "Create marketing plan"</div>
+                </div>
+                <div class="h-4 w-px bg-cyan-500 ml-4"></div>
+                <div class="flex items-center gap-4">
+                    <div class="w-8 h-8 flex items-center justify-center border border-cyan-500 rounded text-cyan-500">2</div>
+                    <div class="flex-1 p-2 bg-cyan-900/20 border border-cyan-900/50 text-xs">GEMINI FLASH 2.5 -> STRUCTURAL ANALYSIS</div>
+                </div>
+                <div class="h-4 w-px bg-cyan-500 ml-4"></div>
+                <div class="flex items-center gap-4">
+                    <div class="w-8 h-8 flex items-center justify-center border border-cyan-500 rounded text-cyan-500">3</div>
+                    <div class="flex-1 p-2 bg-cyan-900/20 border border-cyan-900/50 text-xs">JSON HYDRATION -> ProjectService.addProject()</div>
+                </div>
+                 <div class="h-4 w-px bg-cyan-500 ml-4"></div>
+                <div class="flex items-center gap-4">
+                    <div class="w-8 h-8 flex items-center justify-center border border-white text-white bg-cyan-600">4</div>
+                    <div class="flex-1 p-2 bg-cyan-500/20 border border-cyan-500 text-xs text-white">UI UPDATE (ZONELESS SIGNAL)</div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="py-12 border-t border-white/5 bg-zinc-950">
-        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
-            <div class="text-center md:text-left">
-                <div class="flex items-center justify-center md:justify-start gap-2 mb-2">
-                    <div class="w-4 h-4 bg-zinc-800 text-white flex items-center justify-center font-bold text-[8px] rounded-sm">O</div>
-                    <span class="font-light tracking-[0.2em] text-xs text-white">ODUS AI</span>
-                </div>
-                <p class="text-[10px] text-zinc-600">© 2024 Nexus Corp. All Systems Nominal.</p>
-            </div>
-            
-            <a href="https://odus-ai-project-manager-937668381187.us-west1.run.app" class="px-6 py-3 bg-white text-black text-xs font-bold uppercase tracking-widest rounded hover:bg-zinc-200 transition-colors">
-                Launch Application
-            </a>
-        </div>
+    <footer class="text-center text-[10px] text-cyan-800 border-t border-cyan-900/30 pt-8">
+        ODUS_AI // CONFIDENTIAL BLUEPRINTS // NEXUS_CORP
     </footer>
 
 </body>
