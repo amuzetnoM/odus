@@ -1,8 +1,8 @@
 
 import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TimeTrackingService } from '../../services/time-tracking.service';
-import { ProjectService } from '../../services/project.service';
+import { TimeTrackingService } from '../services/time-tracking.service';
+import { ProjectService } from '../services/project.service';
 
 @Component({
   selector: 'app-time-tracker',
@@ -106,8 +106,8 @@ import { ProjectService } from '../../services/project.service';
   `]
 })
 export class TimeTrackerComponent {
-  timeTracking = inject(TimeTrackingService);
-  projectService = inject(ProjectService);
+  readonly timeTracking: TimeTrackingService = inject(TimeTrackingService);
+  private readonly projectService: ProjectService = inject(ProjectService);
 
   velocityMetrics = this.timeTracking.velocityMetrics;
   currentDuration = this.timeTracking.currentDuration;
@@ -129,7 +129,8 @@ export class TimeTrackerComponent {
   }
 
   getTaskTitle(taskId: string): string {
-    const task = this.projectService.allTasks().find(t => t.id === taskId);
+    const allTasks = this.projectService.allTasks();
+    const task = allTasks.find((t: any) => t.id === taskId);
     return task?.title || 'Unknown Task';
   }
 

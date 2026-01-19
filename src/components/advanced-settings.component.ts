@@ -2,9 +2,9 @@
 import { Component, inject, signal, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RecurringTasksService, RecurringTask } from '../../services/recurring-tasks.service';
-import { TaskAutomationService, AutomationRule } from '../../services/task-automation.service';
-import { ProjectService } from '../../services/project.service';
+import { RecurringTasksService, RecurringTask } from '../services/recurring-tasks.service';
+import { TaskAutomationService, AutomationRule } from '../services/task-automation.service';
+import { ProjectService } from '../services/project.service';
 
 type SettingsTab = 'recurring' | 'automation';
 

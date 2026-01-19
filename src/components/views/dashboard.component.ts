@@ -6,12 +6,17 @@ import { ProjectService, Task, TaskMetadata, Priority } from '../../services/pro
 import { DriveService } from '../../services/drive.service';
 import { GeminiService } from '../../services/gemini.service';
 import { MindService } from '../../services/mind.service';
+import { TimeTrackingService } from '../../services/time-tracking.service';
 import { SuccessRoadmapComponent } from './success-roadmap.component';
+import { TimeTrackerComponent } from '../time-tracker.component';
+import { AiInsightsComponent } from '../ai-insights.component';
+import { TemplateLibraryComponent } from '../template-library.component';
+import { AdvancedSettingsComponent } from '../advanced-settings.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, SuccessRoadmapComponent],
+  imports: [CommonModule, FormsModule, SuccessRoadmapComponent, TimeTrackerComponent, AiInsightsComponent, TemplateLibraryComponent, AdvancedSettingsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="h-full flex flex-col p-4 sm:p-8 overflow-hidden">
@@ -19,6 +24,27 @@ import { SuccessRoadmapComponent } from './success-roadmap.component';
       <div class="mb-8 flex flex-wrap items-end gap-4 shrink-0">
          <div class="min-w-[120px] mr-auto flex flex-col gap-1">
             <h1 class="text-2xl font-extralight text-white tracking-widest mb-0">SCOPE</h1>
+         </div>
+         
+         <!-- Action Buttons -->
+         <div class="flex gap-2">
+            <button 
+              (click)="showTemplateLibrary.set(true)"
+              class="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold rounded-lg transition-colors flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+              Templates
+            </button>
+            <button 
+              (click)="showAdvancedSettings.set(true)"
+              class="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold rounded-lg transition-colors flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+              Settings
+            </button>
          </div>
          
          <!-- Smart Quick Add Form (Right Aligned) -->
@@ -37,7 +63,7 @@ import { SuccessRoadmapComponent } from './success-roadmap.component';
          </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 min-h-0">
+      <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 flex-1 min-h-0">
          
          <!-- Focus List -->
          <div class="flex flex-col min-h-0 bg-zinc-900/10 border border-white/5 rounded-xl p-4 relative overflow-hidden backdrop-blur-sm">
@@ -160,11 +186,25 @@ import { SuccessRoadmapComponent } from './success-roadmap.component';
             </div>
          </div>
 
+         <!-- Time Tracker & AI Insights -->
+         <div class="flex flex-col min-h-0 space-y-6">
+            <app-time-tracker />
+            <app-ai-insights />
+         </div>
+
          <!-- Success Roadmap (Replaces Recent Data) -->
          <div class="flex flex-col min-h-0 h-full">
             <app-success-roadmap class="h-full block" />
          </div>
       </div>
+
+      <!-- Modals -->
+      @if (showTemplateLibrary()) {
+        <app-template-library (close)="showTemplateLibrary.set(false)" />
+      }
+      @if (showAdvancedSettings()) {
+        <app-advanced-settings (close)="showAdvancedSettings.set(false)" />
+      }
     </div>
   `,
   styles: [`
@@ -178,11 +218,14 @@ export class DashboardComponent {
   driveService = inject(DriveService);
   geminiService = inject(GeminiService);
   mindService = inject(MindService);
+  timeTracking = inject(TimeTrackingService);
   
   quickTaskTitle = signal('');
   expandedTasks = signal<string[]>([]);
   isCurating = signal(false);
   isQuickAdding = signal(false);
+  showTemplateLibrary = signal(false);
+  showAdvancedSettings = signal(false);
   
   draggedTaskIndex = -1;
 

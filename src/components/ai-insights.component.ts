@@ -1,8 +1,8 @@
 
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { PredictiveAiService } from '../../services/predictive-ai.service';
-import { ProjectService } from '../../services/project.service';
+import { PredictiveAiService } from '../services/predictive-ai.service';
+import { ProjectService } from '../services/project.service';
 
 @Component({
   selector: 'app-ai-insights',

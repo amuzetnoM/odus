@@ -1,9 +1,9 @@
 
-import { Component, inject, signal, output } from '@angular/core';
+import { Component, inject, signal, output, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TemplateLibraryService, ProjectTemplate } from '../../services/template-library.service';
-import { ProjectService } from '../../services/project.service';
-import { NotificationService } from '../../services/notification.service';
+import { TemplateLibraryService, ProjectTemplate } from '../services/template-library.service';
+import { ProjectService } from '../services/project.service';
+import { NotificationService } from '../services/notification.service';
 
 @Component({
   selector: 'app-template-library',
@@ -193,10 +193,9 @@ export class TemplateLibraryComponent {
 
   constructor() {
     this.filteredTemplates.set(this.templates);
-  }
-
-  ngOnInit() {
-    this.selectedCategory.subscribe(category => {
+    
+    effect(() => {
+      const category = this.selectedCategory();
       if (category === 'all') {
         this.filteredTemplates.set(this.templates);
       } else {
