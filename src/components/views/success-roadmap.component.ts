@@ -12,22 +12,39 @@ import * as d3 from 'd3';
     <div class="flex flex-col h-full bg-zinc-900/10 border border-white/5 rounded-xl backdrop-blur-sm overflow-hidden relative group">
         <div class="p-4 border-b border-white/5 flex justify-between items-center bg-zinc-900/40">
             <h2 class="text-xs font-semibold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-               <span class="w-1 h-1 bg-cyan-400 rounded-full shadow-[0_0_8px_cyan]"></span> Success Path
+               <span class="w-1 h-1 bg-cyan-400 rounded-full shadow-[0_0_8px_cyan] animate-pulse"></span> Success Path
             </h2>
-            <div class="flex gap-2 text-[9px] font-mono text-zinc-600 uppercase">
-                <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-cyan-500"></span> Critical</span>
-                <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-zinc-600"></span> Tangent</span>
-            </div>
         </div>
         
         <div #graphContainer class="flex-1 w-full h-full relative cursor-grab active:cursor-grabbing overflow-hidden"></div>
         
         <div class="absolute bottom-4 right-4 text-[9px] text-zinc-600 font-mono pointer-events-none text-right">
             OPTIMAL DELIVERY VECTOR<br>
-            <span class="text-cyan-500/50">COMPUTE_OPTIMIZED</span>
+            <span class="text-cyan-500/50 animate-pulse">COMPUTE_OPTIMIZED</span>
         </div>
     </div>
-  `
+  `,
+  styles: [`
+    :host ::ng-deep .flow-line {
+        stroke-dasharray: 4 4;
+        animation: flowDash 1s linear infinite;
+        filter: url(#neon-glow);
+    }
+    
+    :host ::ng-deep .critical-node-glow {
+        animation: neonPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes flowDash {
+        to { stroke-dashoffset: -8; }
+    }
+
+    @keyframes neonPulse {
+        0% { r: 12; opacity: 0.1; stroke-width: 0; }
+        50% { r: 16; opacity: 0.3; stroke-width: 1px; }
+        100% { r: 12; opacity: 0.1; stroke-width: 0; }
+    }
+  `]
 })
 export class SuccessRoadmapComponent implements OnDestroy {
     projectService = inject(ProjectService);
@@ -106,7 +123,7 @@ export class SuccessRoadmapComponent implements OnDestroy {
             isCritical: criticalIds.has(t.id),
             priority: t.priority,
             color: t.projectColor,
-            r: criticalIds.has(t.id) ? 8 : 5,
+            r: criticalIds.has(t.id) ? 6 : 4, // Slightly smaller base radius for cleaner look
             ...t
         }));
 
@@ -146,16 +163,35 @@ export class SuccessRoadmapComponent implements OnDestroy {
             .attr('height', height)
             .attr('viewBox', [0, 0, width, height]);
 
-        // Gradient Definition
+        // Gradient & Filter Definitions
         const defs = svg.append('defs');
+        
+        // Path Gradient
         const gradient = defs.append('linearGradient')
             .attr('id', 'pathGradient')
             .attr('x1', '0%')
             .attr('y1', '0%')
             .attr('x2', '100%')
             .attr('y2', '0%');
-        gradient.append('stop').attr('offset', '0%').attr('stop-color', '#22d3ee').attr('stop-opacity', 0.2);
-        gradient.append('stop').attr('offset', '100%').attr('stop-color', '#22d3ee').attr('stop-opacity', 1);
+        gradient.append('stop').attr('offset', '0%').attr('stop-color', '#22d3ee').attr('stop-opacity', 0.1);
+        gradient.append('stop').attr('offset', '50%').attr('stop-color', '#22d3ee').attr('stop-opacity', 0.4);
+        gradient.append('stop').attr('offset', '100%').attr('stop-color', '#22d3ee').attr('stop-opacity', 0.1);
+
+        // Neon Glow Filter
+        const filter = defs.append('filter')
+            .attr('id', 'neon-glow')
+            .attr('x', '-50%')
+            .attr('y', '-50%')
+            .attr('width', '200%')
+            .attr('height', '200%');
+        
+        filter.append('feGaussianBlur')
+            .attr('stdDeviation', '2.5')
+            .attr('result', 'coloredBlur');
+            
+        const feMerge = filter.append('feMerge');
+        feMerge.append('feMergeNode').attr('in', 'coloredBlur');
+        feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
 
         // Define positioning based on sequence
         // Distribute Critical Nodes evenly across X axis
@@ -168,26 +204,24 @@ export class SuccessRoadmapComponent implements OnDestroy {
 
         this.simulation = d3.forceSimulation(nodes as any)
             .force('link', d3.forceLink(links).id((d: any) => d.id).distance(60).strength(0.5))
-            .force('charge', d3.forceManyBody().strength(-100))
-            .force('collide', d3.forceCollide().radius(15))
+            .force('charge', d3.forceManyBody().strength(-150))
+            .force('collide', d3.forceCollide().radius(20))
             // Tangent nodes gravitate towards their critical parents but float
-            .force('y', d3.forceY(height / 2).strength(0.1))
+            .force('y', d3.forceY(height / 2).strength(0.15))
             .force('x', d3.forceX((d: any) => {
-                if (d.isCritical) return d.fx; // Should allow some wiggle but mostly fixed
-                // If not critical, try to stay near linked neighbors
+                if (d.isCritical) return d.fx; 
                 return width / 2;
             }).strength(0.05));
 
-        // Draw 'Success Line' (The straight path)
+        // Draw 'Success Line' (The straight path background)
         svg.append('line')
             .attr('x1', 0)
             .attr('y1', height / 2)
             .attr('x2', width)
             .attr('y2', height / 2)
             .attr('stroke', 'url(#pathGradient)')
-            .attr('stroke-width', 1)
-            .attr('stroke-dasharray', '4 4')
-            .attr('class', 'opacity-30');
+            .attr('stroke-width', 2)
+            .attr('class', 'opacity-50');
 
         const link = svg.append('g')
             .selectAll('line')
@@ -195,8 +229,8 @@ export class SuccessRoadmapComponent implements OnDestroy {
             .join('line')
             .attr('stroke', (d: any) => d.type === 'flow' ? '#22d3ee' : '#52525b')
             .attr('stroke-width', (d: any) => d.type === 'flow' ? 2 : 1)
-            .attr('stroke-opacity', (d: any) => d.type === 'flow' ? 0.6 : 0.3)
-            .attr('stroke-dasharray', (d: any) => d.dashed ? '3 3' : 'none');
+            .attr('stroke-opacity', (d: any) => d.type === 'flow' ? 0.8 : 0.3)
+            .attr('class', (d: any) => d.type === 'flow' ? 'flow-line' : '');
 
         const node = svg.append('g')
             .selectAll('g')
@@ -208,29 +242,32 @@ export class SuccessRoadmapComponent implements OnDestroy {
                 .on('drag', dragged)
                 .on('end', dragended));
 
-        // Outer Glow for Critical
+        // Outer Glow for Critical (Animated via CSS)
         node.filter((d: any) => d.isCritical)
             .append('circle')
             .attr('r', 12)
             .attr('fill', (d: any) => d.color || '#fff')
-            .attr('fill-opacity', 0.2)
-            .attr('class', 'animate-pulse');
+            .attr('stroke', (d: any) => d.color || '#fff')
+            .attr('class', 'critical-node-glow');
 
         // Main Circle
         node.append('circle')
             .attr('r', (d: any) => d.r)
             .attr('fill', '#18181b')
             .attr('stroke', (d: any) => d.isCritical ? (d.color || '#fff') : '#52525b')
-            .attr('stroke-width', (d: any) => d.isCritical ? 2 : 1);
+            .attr('stroke-width', (d: any) => d.isCritical ? 2 : 1)
+            .style('filter', (d: any) => d.isCritical ? 'url(#neon-glow)' : 'none');
 
         // Label
         node.append('text')
-            .attr('dy', (d: any) => d.isCritical ? -15 : 12)
+            .attr('dy', (d: any) => d.isCritical ? -18 : 15)
             .attr('text-anchor', 'middle')
-            .text((d: any) => d.title.length > 10 ? d.title.substring(0,8)+'..' : d.title)
-            .attr('font-size', '8px')
+            .text((d: any) => d.title.length > 12 ? d.title.substring(0,10)+'..' : d.title)
+            .attr('font-size', (d: any) => d.isCritical ? '9px' : '7px')
             .attr('fill', (d: any) => d.isCritical ? '#fff' : '#71717a')
-            .attr('class', 'pointer-events-none select-none font-mono uppercase');
+            .attr('font-weight', (d: any) => d.isCritical ? 'bold' : 'normal')
+            .style('text-shadow', (d: any) => d.isCritical ? '0 0 10px rgba(0,0,0,0.8)' : 'none')
+            .attr('class', 'pointer-events-none select-none font-mono uppercase tracking-tight');
 
         this.simulation.on('tick', () => {
             link

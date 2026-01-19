@@ -2,7 +2,7 @@
 import { Component, output, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { GeminiService } from '../services/gemini.service';
+import { GeminiService, AiProvider } from '../services/gemini.service';
 import { GithubService } from '../services/github.service';
 import { AuthService } from '../services/auth.service';
 import { NotificationService } from '../services/notification.service';
@@ -57,10 +57,18 @@ type SettingsTab = 'profile' | 'system';
               <div class="space-y-6 animate-fade-in">
                   <!-- Avatar & Info -->
                   <div class="flex items-center gap-4">
-                      <img [src]="userAvatar()" class="w-16 h-16 rounded-full border border-white/10 object-cover bg-zinc-800" />
+                      <div class="relative group">
+                          <img [src]="userAvatar()" class="w-16 h-16 rounded-full border border-white/10 object-cover bg-zinc-800" />
+                          <div class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                          </div>
+                      </div>
                       <div>
                           <p class="text-[10px] text-zinc-500 font-mono uppercase mb-1">User ID: {{ userId() }}</p>
-                          <button class="text-xs text-indigo-400 hover:text-indigo-300 underline disabled:opacity-50 disabled:no-underline" disabled>Change Avatar</button>
+                          <label class="text-xs text-indigo-400 hover:text-indigo-300 underline cursor-pointer">
+                              Change Avatar
+                              <input type="file" class="hidden" accept="image/*" (change)="onAvatarSelected($event)">
+                          </label>
                       </div>
                   </div>
 
@@ -126,24 +134,51 @@ type SettingsTab = 'profile' | 'system';
            <!-- SYSTEM TAB -->
            @if (activeTab() === 'system') {
               <div class="space-y-6 animate-fade-in">
-                <!-- Gemini -->
+                
+                <!-- AI Provider Selection -->
                 <div>
-                    <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Gemini API Key</label>
+                    <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">AI Provider</label>
+                    <select 
+                        [ngModel]="selectedProvider()"
+                        (ngModelChange)="selectedProvider.set($event)"
+                        class="w-full bg-zinc-900 border border-zinc-800 rounded p-3 text-xs text-zinc-300 focus:outline-none focus:border-indigo-500 transition-colors uppercase tracking-wide">
+                        <option value="gemini">Google Gemini</option>
+                        <option value="openai">OpenAI (GPT-4)</option>
+                        <option value="anthropic">Anthropic (Claude 3.5)</option>
+                    </select>
+                </div>
+
+                <!-- API Key (Dynamic based on provider) -->
+                <div>
+                    <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">
+                        @switch(selectedProvider()) {
+                            @case('gemini') { Gemini API Key }
+                            @case('openai') { OpenAI API Key }
+                            @case('anthropic') { Anthropic API Key }
+                        }
+                    </label>
                     <div class="relative">
                         <input 
-                            [ngModel]="geminiKey()"
-                            (ngModelChange)="geminiKey.set($event)"
+                            [ngModel]="apiKey()"
+                            (ngModelChange)="apiKey.set($event)"
                             type="password"
                             class="w-full bg-zinc-900 border border-zinc-800 rounded p-3 text-xs text-zinc-300 focus:outline-none focus:border-indigo-500 transition-colors font-mono"
-                            placeholder="AI Studio Key..."
+                            [placeholder]="getPlaceholder()"
                             [disabled]="isTesting()"
                         />
                     </div>
-                    <p class="text-[9px] text-zinc-600 mt-2">Required for generative features. Stored locally.</p>
+                    <p class="text-[9px] text-zinc-600 mt-2">
+                        @switch(selectedProvider()) {
+                            @case('gemini') { Uses 'gemini-2.5-flash'. }
+                            @case('openai') { Uses 'gpt-4-turbo'. }
+                            @case('anthropic') { Uses 'claude-3-5-sonnet'. }
+                        }
+                        Stored locally.
+                    </p>
                 </div>
 
                 <!-- GitHub -->
-                <div>
+                <div class="pt-4 border-t border-white/5">
                     <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">GitHub Personal Token</label>
                     <div class="relative">
                         <input 
@@ -254,7 +289,8 @@ export class SettingsModalComponent {
   resetConfirmation = signal('');
 
   // System State
-  geminiKey = signal(localStorage.getItem('gemini_api_key') || '');
+  selectedProvider = signal<AiProvider>('gemini');
+  apiKey = signal('');
   githubToken = signal(localStorage.getItem('gh_token') || '');
 
   // Profile State
@@ -274,6 +310,34 @@ export class SettingsModalComponent {
       this.userAvatar.set(user.avatar);
       this.emailAlerts.set(user.preferences.emailAlerts);
       this.deviceNotifications.set(user.preferences.deviceNotifications);
+
+      // Init System Data
+      const storedProvider = (localStorage.getItem('ai_provider') as AiProvider) || 'gemini';
+      this.selectedProvider.set(storedProvider);
+      this.loadKeyForProvider(storedProvider);
+
+      // Effect to switch key input when provider changes
+      effect(() => {
+          this.loadKeyForProvider(this.selectedProvider());
+      }, { allowSignalWrites: true });
+  }
+
+  loadKeyForProvider(provider: AiProvider) {
+      const keyMap: Record<AiProvider, string> = {
+          'gemini': 'gemini_api_key',
+          'openai': 'openai_api_key',
+          'anthropic': 'anthropic_api_key'
+      };
+      this.apiKey.set(localStorage.getItem(keyMap[provider]) || '');
+  }
+
+  getPlaceholder() {
+      switch(this.selectedProvider()) {
+          case 'gemini': return 'AI Studio Key (Start with AI...)';
+          case 'openai': return 'sk-...';
+          case 'anthropic': return 'sk-ant-...';
+          default: return 'API Key';
+      }
   }
 
   toggleDeviceNotifications() {
@@ -281,6 +345,26 @@ export class SettingsModalComponent {
       this.deviceNotifications.set(newState);
       if (newState) {
           this.authService.requestNotificationPermission();
+      }
+  }
+
+  onAvatarSelected(event: Event) {
+      const input = event.target as HTMLInputElement;
+      if (input.files && input.files[0]) {
+          const file = input.files[0];
+          
+          // 10MB Limit
+          if (file.size > 10 * 1024 * 1024) {
+              this.notification.notify('Upload Failed', 'Image must be smaller than 10MB', 'error');
+              return;
+          }
+
+          const reader = new FileReader();
+          reader.onload = (e) => {
+              const result = e.target?.result as string;
+              this.userAvatar.set(result);
+          };
+          reader.readAsDataURL(file);
       }
   }
 
@@ -294,41 +378,33 @@ export class SettingsModalComponent {
       this.isTesting.set(true);
       
       try {
-          // 1. Save Profile (Always)
+          // 1. Save Profile
           this.authService.updateProfile({
               name: this.userName(),
               email: this.userEmail(),
+              avatar: this.userAvatar(),
               preferences: {
                   emailAlerts: this.emailAlerts(),
                   deviceNotifications: this.deviceNotifications()
               }
           });
-
-          // 2. Propagate Identity Changes to Artifacts (Comments, etc)
           this.projectService.updateUserIdentity(this.userId(), this.userName(), this.userAvatar());
 
-          // 3. Validate & Save System Config (If changed or keys exist)
-          const gKey = this.geminiKey();
-          const ghToken = this.githubToken();
+          // 2. Save AI Configuration
+          const provider = this.selectedProvider();
+          const key = this.apiKey();
           
-          let geminiValid = true;
-          let githubValid = true;
+          this.geminiService.setProvider(provider);
+          this.geminiService.updateApiKey(key, provider);
 
-          // Only validate if on system tab or if keys exist to ensure integrity
-          if (this.activeTab() === 'system' || gKey) {
-             [geminiValid, githubValid] = await Promise.all([
-                 this.geminiService.validateConnection(gKey),
-                 ghToken ? this.githubService.validateConnection(ghToken) : Promise.resolve(true)
-             ]);
+          // 3. Save GitHub
+          this.githubService.setToken(this.githubToken());
 
-             if (!geminiValid) throw new Error('Gemini API Key Invalid');
-             if (!githubValid) throw new Error('GitHub Token Invalid');
+          // 4. Validate AI Connection
+          const isValid = await this.geminiService.validateConnection(key);
+          if (!isValid) throw new Error(`${provider.toUpperCase()} Connection Failed. Check Key.`);
 
-             this.geminiService.updateApiKey(gKey);
-             this.githubService.setToken(ghToken);
-          }
-
-          this.notification.notify('Success', 'Settings Updated Successfully', 'success');
+          this.notification.notify('Success', 'System Configuration Updated', 'success');
           this.close.emit();
 
       } catch (e: any) {

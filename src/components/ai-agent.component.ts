@@ -1,5 +1,5 @@
 
-import { Component, inject, signal, effect, ElementRef, viewChild } from '@angular/core';
+import { Component, inject, signal, effect, computed, ElementRef, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GeminiService } from '../services/gemini.service';
@@ -45,12 +45,11 @@ interface ChatMessage {
         </button>
     </div>
 
-    <!-- Chat Interface (Fixed Position relative to screen for stability, but near button logic could be added) -->
+    <!-- Chat Interface -->
     @if (isOpen()) {
       <div 
-        class="fixed bottom-24 right-6 left-6 sm:left-auto sm:w-[400px] h-[60vh] sm:h-[600px] bg-zinc-950/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden z-40 animate-scale-in origin-bottom-right"
-        [style.right.px]="windowWidth() - buttonPosition().x - 60"
-        [style.bottom.px]="windowHeight() - buttonPosition().y + 20"
+        class="fixed bg-zinc-950/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden z-40 animate-scale-in"
+        [style]="chatWindowStyle()"
       >
         
         <!-- Header -->
@@ -201,6 +200,62 @@ export class AiAgentComponent {
   windowHeight = signal(window.innerHeight);
   
   private recognition: any;
+
+  // Intelligent Chat Positioning
+  chatWindowStyle = computed(() => {
+      const btn = this.buttonPosition();
+      const ww = this.windowWidth();
+      const wh = this.windowHeight();
+      
+      const width = 400; // Base width
+      const height = 600; // Base height
+      
+      // Horizontal Logic: Anchor to left of button if button is on right half, else right of button
+      // But ensure it fits within margins (10px)
+      let left = 0;
+      let transformOriginX = 'center';
+      
+      if (btn.x > ww / 2) {
+          // Button is on right side -> Chat goes to left of button
+          left = btn.x - width + 56; // 56 is approx button width/overlap
+          transformOriginX = 'right';
+      } else {
+          // Button is on left side -> Chat goes to right of button
+          left = btn.x;
+          transformOriginX = 'left';
+      }
+      
+      // Clamp Horizontal
+      left = Math.max(10, Math.min(ww - width - 10, left));
+
+      // Vertical Logic: Prefer Above button
+      let top = 0;
+      let heightResult = Math.min(height, wh * 0.7); // Cap height at 70% of screen
+      let transformOriginY = 'bottom';
+
+      // Default: Place bottom of chat near top of button
+      top = btn.y - heightResult - 10;
+
+      // If that pushes off top, place below button
+      if (top < 10) {
+          top = btn.y + 60; // Button height + margin
+          transformOriginY = 'top';
+      }
+      
+      // Final Clamp Vertical
+      if (top + heightResult > wh - 10) {
+          // If going off bottom, force it to bottom margin and shrink height if needed
+          top = wh - heightResult - 10;
+      }
+      
+      return {
+          left: `${left}px`,
+          top: `${top}px`,
+          width: `${width}px`,
+          height: `${heightResult}px`,
+          'transform-origin': `${transformOriginY} ${transformOriginX}`
+      };
+  });
 
   constructor() {
       // Init Chat

@@ -23,7 +23,8 @@ export class AuthService {
     id: 'u1',
     name: 'Alex Innovator',
     email: 'alex@nexus.ai',
-    avatar: 'https://i.pravatar.cc/150?u=alex',
+    // Using a reliable seed for abstract/fractal art style
+    avatar: 'https://api.dicebear.com/9.x/shapes/svg?seed=fractal&backgroundColor=0a0a0a&shape1Color=22d3ee&shape2Color=818cf8',
     preferences: {
       emailAlerts: false,
       deviceNotifications: false
