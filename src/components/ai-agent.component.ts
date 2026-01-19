@@ -566,7 +566,7 @@ export class AiAgentComponent implements AfterViewInit, OnDestroy {
           );
           
           if (result.toolCall) {
-              this.handleToolCall(result.toolCall, result.groundingMetadata);
+              await this.handleToolCall(result.toolCall, result.groundingMetadata);
           } else {
               this.messages.update(p => [...p, { 
                   role: 'model', 
