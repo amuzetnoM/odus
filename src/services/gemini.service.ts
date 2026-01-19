@@ -455,6 +455,8 @@ export class GeminiService {
                   ...t,
                   id: crypto.randomUUID(),
                   createdAt: new Date().toISOString(),
+                  status: t.status || 'todo',
+                  priority: t.priority || 'medium',
                   startDate: start.toISOString().split('T')[0],
                   endDate: end.toISOString().split('T')[0]
               };

@@ -202,6 +202,10 @@ export class DashboardComponent {
           // 1. Ingest to Project System
           const targetProjectId = await this.geminiService.routeTaskToProject(title, this.projectService.projects());
           
+          const today = new Date();
+          const endDate = new Date();
+          endDate.setDate(today.getDate() + 3);
+
           this.projectService.addTask(targetProjectId, {
               title: title,
               description: 'Added via Dashboard Smart Add',
@@ -209,7 +213,9 @@ export class DashboardComponent {
               priority: 'medium',
               tags: ['QUICK', 'FOCUS'],
               inFocusList: true,
-              focusIndex: 0
+              focusIndex: 0,
+              startDate: today.toISOString().split('T')[0],
+              endDate: endDate.toISOString().split('T')[0]
           });
 
           // 2. Absorb into Mind Map (Neural Ingestion)

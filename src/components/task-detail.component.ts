@@ -429,12 +429,18 @@ export class TaskDetailComponent {
       const title = this.newDepTitle().trim();
       if(!title) return;
       
+      const today = new Date();
+      const endDate = new Date();
+      endDate.setDate(today.getDate() + 3);
+
       // Add task to current project
       const newTask = this.projectService.addTask(this.projectId(), {
           title,
           description: `Dependency for ${this.task().title}`,
           status: 'todo',
-          priority: 'medium'
+          priority: 'medium',
+          startDate: today.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0]
       });
 
       // Link it
