@@ -20,6 +20,20 @@ export interface DayBriefing {
   dayType: 'FOCUS' | 'CRUNCH' | 'BALANCED' | 'LIGHT' | 'REST';
 }
 
+// Priority Distribution Constants
+const PRIORITY_DISTRIBUTION = {
+  HIGH: { MIN: 0.20, MAX: 0.35, TARGET: 0.25 },   // 20-35%, target 25%
+  MEDIUM: { MIN: 0.45, MAX: 0.65, TARGET: 0.55 },  // 45-65%, target 55%
+  LOW: { MIN: 0.15, MAX: 0.30, TARGET: 0.20 }      // 15-30%, target 20%
+} as const;
+
+// Task Duration Constants
+const TASK_DURATION = {
+  DEFAULT: 4,      // Default duration when AI doesn't provide one
+  MIN_RANDOM: 3,   // Minimum random duration
+  MAX_RANDOM: 6    // Maximum random duration
+} as const;
+
 @Injectable({
   providedIn: 'root'
 })
@@ -308,7 +322,9 @@ export class GeminiService {
               const start = new Date(today);
               start.setDate(today.getDate() + (t.startOffset || 0));
               
-              const duration = typeof t.duration === 'number' && t.duration > 0 ? t.duration : Math.floor(Math.random() * 4) + 2; // 2-5 days
+              const duration = typeof t.duration === 'number' && t.duration > 0 
+                  ? t.duration 
+                  : Math.floor(Math.random() * (TASK_DURATION.MAX_RANDOM - TASK_DURATION.MIN_RANDOM + 1)) + TASK_DURATION.MIN_RANDOM;
               const end = new Date(start);
               end.setDate(start.getDate() + duration);
 
@@ -534,10 +550,11 @@ Return ONLY valid JSON matching this structure:
           
           // If priority distribution is poor, fix it
           const total = rawTasks.length;
-          if (total > 0 && (priorityCounts.high < total * 0.15 || priorityCounts.high > total * 0.4)) {
-              // Rebalance: Mark first ~25% as high priority
-              const targetHigh = Math.max(2, Math.floor(total * 0.25));
-              const targetMedium = Math.floor(total * 0.55);
+          const highRatio = priorityCounts.high / total;
+          if (total > 0 && (highRatio < PRIORITY_DISTRIBUTION.HIGH.MIN || highRatio > PRIORITY_DISTRIBUTION.HIGH.MAX)) {
+              // Rebalance priorities according to target distribution
+              const targetHigh = Math.max(2, Math.floor(total * PRIORITY_DISTRIBUTION.HIGH.TARGET));
+              const targetMedium = Math.floor(total * PRIORITY_DISTRIBUTION.MEDIUM.TARGET);
               
               rawTasks.forEach((t: any, idx: number) => {
                   if (idx < targetHigh) {
@@ -556,7 +573,9 @@ Return ONLY valid JSON matching this structure:
               const start = new Date(today); 
               start.setDate(today.getDate() + (t.startDayOffset || 0));
               
-              const duration = typeof t.durationDays === 'number' && t.durationDays > 0 ? t.durationDays : Math.floor(Math.random() * 4) + 3; // 3-6 days
+              const duration = typeof t.durationDays === 'number' && t.durationDays > 0 
+                  ? t.durationDays 
+                  : Math.floor(Math.random() * (TASK_DURATION.MAX_RANDOM - TASK_DURATION.MIN_RANDOM + 1)) + TASK_DURATION.MIN_RANDOM;
               const end = new Date(start); 
               end.setDate(start.getDate() + duration);
 
