@@ -1,0 +1,204 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ODUS SYSTEM BLUEPRINTS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100;300;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #050505;
+            color: #00e5ff;
+            font-family: 'JetBrains Mono', monospace;
+            overflow-x: hidden;
+            background-image: 
+                linear-gradient(rgba(0, 229, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 229, 255, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .blueprint-box {
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            background: rgba(0, 20, 30, 0.8);
+            position: relative;
+        }
+
+        .blueprint-box::before, .blueprint-box::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #00e5ff;
+            transition: all 0.3s ease;
+        }
+        .blueprint-box::before { top: -2px; left: -2px; }
+        .blueprint-box::after { bottom: -2px; right: -2px; }
+
+        .connector {
+            position: absolute;
+            background: rgba(0, 229, 255, 0.2);
+            z-index: -1;
+        }
+
+        .glow-text { text-shadow: 0 0 10px rgba(0, 229, 255, 0.5); }
+        
+        /* Schematic Line Animation */
+        @keyframes flow {
+            0% { background-position: 0 0; }
+            100% { background-position: 20px 0; }
+        }
+        .data-stream {
+            height: 2px;
+            background: repeating-linear-gradient(90deg, #00e5ff 0, #00e5ff 4px, transparent 4px, transparent 8px);
+            animation: flow 1s linear infinite;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body class="p-8">
+
+    <!-- Header -->
+    <header class="border-b border-cyan-900/50 pb-8 mb-12 flex justify-between items-end">
+        <div>
+            <div class="text-[10px] text-cyan-600 mb-2">CLASSIFIED // SYSTEM ARCHITECTURE // V1.3.0</div>
+            <h1 class="text-4xl md:text-6xl font-bold tracking-tighter glow-text">ODUS<span class="text-white">_CORE</span></h1>
+        </div>
+        <div class="text-right text-xs text-cyan-500">
+            <div>STATUS: <span class="text-green-400">ONLINE</span></div>
+            <div>THEME: <span class="text-white">DYNAMIC</span></div>
+            <div>MODE: <span class="text-white">ZONELESS</span></div>
+        </div>
+    </header>
+
+    <!-- Main Architecture Diagram -->
+    <section id="architecture" class="mb-24 relative min-h-[600px]">
+        <h2 class="text-xl mb-12 border-l-4 border-cyan-500 pl-4">LOGIC_FLOW_DIAGRAM</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-12 relative z-10">
+            
+            <!-- INPUT LAYER -->
+            <div class="flex flex-col gap-6">
+                <div class="text-center text-xs text-cyan-700 mb-2">INPUT_LAYER</div>
+                
+                <div class="blueprint-box p-6 hover:bg-cyan-900/10 transition-colors">
+                    <h3 class="text-white font-bold mb-2">USER_INTERFACE</h3>
+                    <ul class="text-xs text-cyan-400 space-y-2 list-none">
+                        <li>> Success Roadmap (D3)</li>
+                        <li>> Zen Mode (Canvas Physics)</li>
+                        <li>> Floating Agent (Draggable)</li>
+                    </ul>
+                </div>
+
+                <div class="h-8 w-px bg-cyan-500/30 mx-auto"></div>
+
+                <div class="blueprint-box p-6 border-dashed border-cyan-500/30">
+                    <h3 class="text-white font-bold mb-2">EXTERNAL_DATA</h3>
+                    <ul class="text-xs text-cyan-400 space-y-2">
+                        <li>> GitHub API (Rest)</li>
+                        <li>> File System (Drag/Drop)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- PROCESSING CORE -->
+            <div class="flex flex-col justify-center relative">
+                <!-- Connectors -->
+                <div class="hidden md:block absolute top-1/2 -left-6 w-6 h-px bg-cyan-500"></div>
+                <div class="hidden md:block absolute top-1/2 -right-6 w-6 h-px bg-cyan-500"></div>
+
+                <div class="blueprint-box p-8 border-2 border-white/20 shadow-[0_0_30px_rgba(0,229,255,0.1)]">
+                    <div class="absolute -top-3 left-4 bg-[#050505] px-2 text-xs text-white font-bold">ANGULAR_SIGNALS_CORE</div>
+                    
+                    <div class="space-y-6">
+                        <div class="flex items-center gap-4">
+                            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                            <div class="flex-1">
+                                <div class="text-sm text-white font-bold">PROJECT_SERVICE</div>
+                                <div class="text-[10px] text-cyan-600">State Management / CRUD</div>
+                            </div>
+                        </div>
+
+                        <div class="data-stream w-full"></div>
+
+                        <div class="flex items-center gap-4">
+                            <div class="w-2 h-2 bg-pink-500 rounded-full animate-pulse"></div>
+                            <div class="flex-1">
+                                <div class="text-sm text-white font-bold">THEME_SERVICE</div>
+                                <div class="text-[10px] text-cyan-600">UI State / Styling / Layout</div>
+                            </div>
+                        </div>
+
+                        <div class="data-stream w-full"></div>
+
+                        <div class="flex items-center gap-4">
+                            <div class="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                            <div class="flex-1">
+                                <div class="text-sm text-white font-bold">GEMINI_SERVICE</div>
+                                <div class="text-[10px] text-cyan-600">Intelligence / Reasoning</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PERSISTENCE LAYER -->
+            <div class="flex flex-col justify-center gap-6">
+                 <div class="text-center text-xs text-cyan-700 mb-2">PERSISTENCE_LAYER</div>
+
+                 <div class="blueprint-box p-6 bg-black/50">
+                    <h3 class="text-white font-bold mb-2">INDEXED_DB</h3>
+                    <div class="grid grid-cols-2 gap-2 text-[10px] text-cyan-500 font-mono">
+                        <div class="border border-cyan-900 p-1">STORE: repos</div>
+                        <div class="border border-cyan-900 p-1">STORE: files</div>
+                        <div class="border border-cyan-900 p-1">STORE: ai_mem</div>
+                        <div class="border border-cyan-900 p-1">STORE: meta</div>
+                    </div>
+                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Entity Spec -->
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-12 mb-24">
+        <div>
+            <h2 class="text-xl mb-6 border-l-4 border-cyan-500 pl-4">ENTITY_SPEC: UI_THEME</h2>
+            <div class="blueprint-box p-6 font-mono text-xs leading-relaxed">
+<pre class="text-cyan-300">
+interface ThemeState {
+  mode: 'dark' | 'light';
+  accent: 'indigo' | 'cyan' | 'rose' | ...;
+  sidebarWidth: number;
+  isMobile: boolean;
+}
+</pre>
+            </div>
+        </div>
+        <div>
+            <h2 class="text-xl mb-6 border-l-4 border-cyan-500 pl-4">AI_PIPELINE (V2)</h2>
+            <div class="space-y-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-8 h-8 flex items-center justify-center border border-cyan-500 rounded text-cyan-500">1</div>
+                    <div class="flex-1 p-2 bg-cyan-900/20 border border-cyan-900/50 text-xs">USER ACTION -> "Create File"</div>
+                </div>
+                <div class="h-4 w-px bg-cyan-500 ml-4"></div>
+                <div class="flex items-center gap-4">
+                    <div class="w-8 h-8 flex items-center justify-center border border-cyan-500 rounded text-cyan-500">2</div>
+                    <div class="flex-1 p-2 bg-cyan-900/20 border border-cyan-900/50 text-xs">GEMINI FLASH 2.0 -> Tool Call Detection</div>
+                </div>
+                <div class="h-4 w-px bg-cyan-500 ml-4"></div>
+                <div class="flex items-center gap-4">
+                    <div class="w-8 h-8 flex items-center justify-center border border-white text-white bg-cyan-600">3</div>
+                    <div class="flex-1 p-2 bg-cyan-500/20 border border-cyan-500 text-xs text-white">GENERATIVE UI -> &lt;file-preview&gt; Component</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="text-center text-[10px] text-cyan-800 border-t border-cyan-900/30 pt-8">
+        ODUS_AI // CONFIDENTIAL BLUEPRINTS // NEXUS_CORP
+    </footer>
+
+</body>
+</html>

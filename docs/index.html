@@ -1,204 +1,219 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ODUS SYSTEM BLUEPRINTS</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100;300;500;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            background-color: #050505;
-            color: #00e5ff;
-            font-family: 'JetBrains Mono', monospace;
-            overflow-x: hidden;
-            background-image: 
-                linear-gradient(rgba(0, 229, 255, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 229, 255, 0.05) 1px, transparent 1px);
-            background-size: 40px 40px;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ODUS - AI-First Project Management Reimagined. Zoneless architecture with generative AI core.">
+  <meta name="keywords" content="project management, AI, task management, knowledge graph, productivity">
+  <title>ODUS - Project Management Reimagined</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+  
+  <style>
+    body { 
+      font-family: 'Inter', sans-serif; 
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent; 
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #3f3f46; 
+      border-radius: 2px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #52525b; 
+    }
 
-        .blueprint-box {
-            border: 1px solid rgba(0, 229, 255, 0.3);
-            background: rgba(0, 20, 30, 0.8);
-            position: relative;
-        }
-
-        .blueprint-box::before, .blueprint-box::after {
-            content: '';
-            position: absolute;
-            width: 4px;
-            height: 4px;
-            background: #00e5ff;
-            transition: all 0.3s ease;
-        }
-        .blueprint-box::before { top: -2px; left: -2px; }
-        .blueprint-box::after { bottom: -2px; right: -2px; }
-
-        .connector {
-            position: absolute;
-            background: rgba(0, 229, 255, 0.2);
-            z-index: -1;
-        }
-
-        .glow-text { text-shadow: 0 0 10px rgba(0, 229, 255, 0.5); }
-        
-        /* Schematic Line Animation */
-        @keyframes flow {
-            0% { background-position: 0 0; }
-            100% { background-position: 20px 0; }
-        }
-        .data-stream {
-            height: 2px;
-            background: repeating-linear-gradient(90deg, #00e5ff 0, #00e5ff 4px, transparent 4px, transparent 8px);
-            animation: flow 1s linear infinite;
-            opacity: 0.5;
-        }
-    </style>
+    @keyframes fadeInUp { 
+      from { opacity: 0; transform: translateY(20px); } 
+      to { opacity: 1; transform: translateY(0); } 
+    }
+    .animate-fade-in-up { 
+      animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+      opacity: 0; 
+    }
+    
+    @keyframes fadeIn { 
+      from { opacity: 0; } 
+      to { opacity: 1; } 
+    }
+    .animate-fade-in { 
+      animation: fadeIn 0.5s ease-out; 
+    }
+  </style>
 </head>
-<body class="p-8">
+<body class="bg-zinc-950 text-white overflow-y-auto custom-scrollbar">
+  
+  <!-- Navigation -->
+  <nav class="fixed top-0 w-full z-50 bg-zinc-950/80 backdrop-blur-md border-b border-white/5">
+    <div class="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <span class="font-light tracking-[0.3em] text-sm text-white">ODUS</span>
+      </div>
+      <div class="hidden md:flex gap-8 text-xs font-medium uppercase tracking-widest text-zinc-500">
+        <a href="#features" class="hover:text-white transition-colors">Features</a>
+        <a href="https://github.com/amuzetnoM/ODUS" target="_blank" class="hover:text-white transition-colors">GitHub</a>
+      </div>
+      <!-- Update this link to your deployed app URL -->
+      <a href="./index.html" class="px-6 py-2 border border-white/10 bg-white/5 text-zinc-400 text-xs font-mono font-bold hover:text-white hover:bg-white/10 rounded transition-colors tracking-widest">
+        Launch App
+      </a>
+    </div>
+  </nav>
 
-    <!-- Header -->
-    <header class="border-b border-cyan-900/50 pb-8 mb-12 flex justify-between items-end">
-        <div>
-            <div class="text-[10px] text-cyan-600 mb-2">CLASSIFIED // SYSTEM ARCHITECTURE // V1.3.0</div>
-            <h1 class="text-4xl md:text-6xl font-bold tracking-tighter glow-text">ODUS<span class="text-white">_CORE</span></h1>
+  <!-- Hero Section -->
+  <header class="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
+    <!-- Abstract Background Elements -->
+    <div class="absolute inset-0 z-0 pointer-events-none">
+      <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-900/20 rounded-full blur-[120px] animate-pulse"></div>
+      <div class="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-zinc-800/20 rounded-full blur-[100px]"></div>
+      <!-- Grid -->
+      <div class="absolute inset-0" style="background-image: radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px); background-size: 50px 50px; opacity: 0.2"></div>
+    </div>
+
+    <div class="relative z-10 text-center max-w-4xl px-6">
+      
+      <h1 class="text-5xl md:text-8xl font-thin tracking-tighter text-white mb-6 animate-fade-in-up" style="animation-delay: 0.1s">
+        PROJECT MGT <br />
+        <span class="font-serif italic text-zinc-500">REIMAGINED</span>
+      </h1>
+      
+      <p class="text-zinc-400 text-lg md:text-xl font-light max-w-2xl mx-auto mb-10 leading-relaxed animate-fade-in-up" style="animation-delay: 0.2s">
+        A zoneless, AI-native workspace. Generate project structures, visualize relationships, and predict risks before they happen.
+      </p>
+
+      <div class="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up" style="animation-delay: 0.3s">
+        <!-- Update this link to your deployed app URL -->
+        <a href="./index.html" class="px-8 py-4 bg-white text-black text-sm font-bold uppercase tracking-widest rounded hover:bg-zinc-200 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.2)]">
+          Initialize System
+        </a>
+        <a href="https://github.com/amuzetnoM/ODUS" target="_blank" class="px-8 py-4 border border-white/10 bg-white/5 text-white text-sm font-bold uppercase tracking-widest rounded hover:bg-white/10 transition-colors backdrop-blur-md">
+          View on GitHub
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Feature Grid -->
+  <section id="features" class="py-32 relative z-10 bg-zinc-900 border-t border-white/5">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        
+        <div class="p-8 border border-white/5 bg-zinc-950/50 rounded-2xl hover:border-white/20 transition-colors group">
+          <div class="mb-6 w-12 h-12 bg-zinc-900 rounded-lg flex items-center justify-center text-white group-hover:scale-110 transition-transform duration-500">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+          </div>
+          <h3 class="text-xl font-light mb-2">Generative Core</h3>
+          <p class="text-sm text-zinc-500 leading-relaxed">ODUS constructs and manages project boards from a single prompt, complete with dependencies and scheduling. It can plan, execute and adapt to ensure successful delivery.</p>
         </div>
-        <div class="text-right text-xs text-cyan-500">
-            <div>STATUS: <span class="text-green-400">ONLINE</span></div>
-            <div>THEME: <span class="text-white">DYNAMIC</span></div>
-            <div>MODE: <span class="text-white">ZONELESS</span></div>
+
+        <div class="p-8 border border-white/5 bg-zinc-950/50 rounded-2xl hover:border-white/20 transition-colors group">
+          <div class="mb-6 w-12 h-12 bg-zinc-900 rounded-lg flex items-center justify-center text-white group-hover:scale-110 transition-transform duration-500">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+          </div>
+          <h3 class="text-xl font-light mb-2">Neural Analysis</h3>
+          <p class="text-sm text-zinc-500 leading-relaxed">Predictive risk assessment scans your Gantt charts for circular logic, bottlenecks, and critical path failures.</p>
         </div>
-    </header>
 
-    <!-- Main Architecture Diagram -->
-    <section id="architecture" class="mb-24 relative min-h-[600px]">
-        <h2 class="text-xl mb-12 border-l-4 border-cyan-500 pl-4">LOGIC_FLOW_DIAGRAM</h2>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-12 relative z-10">
-            
-            <!-- INPUT LAYER -->
-            <div class="flex flex-col gap-6">
-                <div class="text-center text-xs text-cyan-700 mb-2">INPUT_LAYER</div>
-                
-                <div class="blueprint-box p-6 hover:bg-cyan-900/10 transition-colors">
-                    <h3 class="text-white font-bold mb-2">USER_INTERFACE</h3>
-                    <ul class="text-xs text-cyan-400 space-y-2 list-none">
-                        <li>> Success Roadmap (D3)</li>
-                        <li>> Zen Mode (Canvas Physics)</li>
-                        <li>> Floating Agent (Draggable)</li>
-                    </ul>
-                </div>
-
-                <div class="h-8 w-px bg-cyan-500/30 mx-auto"></div>
-
-                <div class="blueprint-box p-6 border-dashed border-cyan-500/30">
-                    <h3 class="text-white font-bold mb-2">EXTERNAL_DATA</h3>
-                    <ul class="text-xs text-cyan-400 space-y-2">
-                        <li>> GitHub API (Rest)</li>
-                        <li>> File System (Drag/Drop)</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- PROCESSING CORE -->
-            <div class="flex flex-col justify-center relative">
-                <!-- Connectors -->
-                <div class="hidden md:block absolute top-1/2 -left-6 w-6 h-px bg-cyan-500"></div>
-                <div class="hidden md:block absolute top-1/2 -right-6 w-6 h-px bg-cyan-500"></div>
-
-                <div class="blueprint-box p-8 border-2 border-white/20 shadow-[0_0_30px_rgba(0,229,255,0.1)]">
-                    <div class="absolute -top-3 left-4 bg-[#050505] px-2 text-xs text-white font-bold">ANGULAR_SIGNALS_CORE</div>
-                    
-                    <div class="space-y-6">
-                        <div class="flex items-center gap-4">
-                            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                            <div class="flex-1">
-                                <div class="text-sm text-white font-bold">PROJECT_SERVICE</div>
-                                <div class="text-[10px] text-cyan-600">State Management / CRUD</div>
-                            </div>
-                        </div>
-
-                        <div class="data-stream w-full"></div>
-
-                        <div class="flex items-center gap-4">
-                            <div class="w-2 h-2 bg-pink-500 rounded-full animate-pulse"></div>
-                            <div class="flex-1">
-                                <div class="text-sm text-white font-bold">THEME_SERVICE</div>
-                                <div class="text-[10px] text-cyan-600">UI State / Styling / Layout</div>
-                            </div>
-                        </div>
-
-                        <div class="data-stream w-full"></div>
-
-                        <div class="flex items-center gap-4">
-                            <div class="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-                            <div class="flex-1">
-                                <div class="text-sm text-white font-bold">GEMINI_SERVICE</div>
-                                <div class="text-[10px] text-cyan-600">Intelligence / Reasoning</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PERSISTENCE LAYER -->
-            <div class="flex flex-col justify-center gap-6">
-                 <div class="text-center text-xs text-cyan-700 mb-2">PERSISTENCE_LAYER</div>
-
-                 <div class="blueprint-box p-6 bg-black/50">
-                    <h3 class="text-white font-bold mb-2">INDEXED_DB</h3>
-                    <div class="grid grid-cols-2 gap-2 text-[10px] text-cyan-500 font-mono">
-                        <div class="border border-cyan-900 p-1">STORE: repos</div>
-                        <div class="border border-cyan-900 p-1">STORE: files</div>
-                        <div class="border border-cyan-900 p-1">STORE: ai_mem</div>
-                        <div class="border border-cyan-900 p-1">STORE: meta</div>
-                    </div>
-                 </div>
-            </div>
+        <div class="p-8 border border-white/5 bg-zinc-950/50 rounded-2xl hover:border-white/20 transition-colors group">
+          <div class="mb-6 w-12 h-12 bg-zinc-900 rounded-lg flex items-center justify-center text-white group-hover:scale-110 transition-transform duration-500">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+          </div>
+          <h3 class="text-xl font-light mb-2">Local First</h3>
+          <p class="text-sm text-zinc-500 leading-relaxed">Powered by IndexedDB. Your data resides on your device, encrypted and persistent. Zero latency state management.</p>
         </div>
-    </section>
 
-    <!-- Entity Spec -->
-    <section class="grid grid-cols-1 md:grid-cols-2 gap-12 mb-24">
-        <div>
-            <h2 class="text-xl mb-6 border-l-4 border-cyan-500 pl-4">ENTITY_SPEC: UI_THEME</h2>
-            <div class="blueprint-box p-6 font-mono text-xs leading-relaxed">
-<pre class="text-cyan-300">
-interface ThemeState {
-  mode: 'dark' | 'light';
-  accent: 'indigo' | 'cyan' | 'rose' | ...;
-  sidebarWidth: number;
-  isMobile: boolean;
-}
-</pre>
-            </div>
+        <div class="p-8 border border-white/5 bg-zinc-950/50 rounded-2xl hover:border-white/20 transition-colors group">
+          <div class="mb-6 w-12 h-12 bg-zinc-900 rounded-lg flex items-center justify-center text-white group-hover:scale-110 transition-transform duration-500">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="3" stroke-width="1.5"></circle>
+              <circle cx="12" cy="4.5" r="1.5" stroke-width="1.5"></circle>
+              <circle cx="19.5" cy="12" r="1.5" stroke-width="1.5"></circle>
+              <circle cx="12" cy="19.5" r="1.5" stroke-width="1.5"></circle>
+              <circle cx="4.5" cy="12" r="1.5" stroke-width="1.5"></circle>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9V6M15 12h3M12 15v3M9 12H6"></path>
+            </svg>
+          </div>
+          <h3 class="text-xl font-light mb-2">Mind Board</h3>
+          <p class="text-sm text-zinc-500 leading-relaxed">Neural knowledge graph for unstructured ideas. AI-powered semantic linking connects concepts automatically.</p>
         </div>
-        <div>
-            <h2 class="text-xl mb-6 border-l-4 border-cyan-500 pl-4">AI_PIPELINE (V2)</h2>
-            <div class="space-y-4">
-                <div class="flex items-center gap-4">
-                    <div class="w-8 h-8 flex items-center justify-center border border-cyan-500 rounded text-cyan-500">1</div>
-                    <div class="flex-1 p-2 bg-cyan-900/20 border border-cyan-900/50 text-xs">USER ACTION -> "Create File"</div>
-                </div>
-                <div class="h-4 w-px bg-cyan-500 ml-4"></div>
-                <div class="flex items-center gap-4">
-                    <div class="w-8 h-8 flex items-center justify-center border border-cyan-500 rounded text-cyan-500">2</div>
-                    <div class="flex-1 p-2 bg-cyan-900/20 border border-cyan-900/50 text-xs">GEMINI FLASH 2.0 -> Tool Call Detection</div>
-                </div>
-                <div class="h-4 w-px bg-cyan-500 ml-4"></div>
-                <div class="flex items-center gap-4">
-                    <div class="w-8 h-8 flex items-center justify-center border border-white text-white bg-cyan-600">3</div>
-                    <div class="flex-1 p-2 bg-cyan-500/20 border border-cyan-500 text-xs text-white">GENERATIVE UI -> &lt;file-preview&gt; Component</div>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <footer class="text-center text-[10px] text-cyan-800 border-t border-cyan-900/30 pt-8">
-        ODUS_AI // CONFIDENTIAL BLUEPRINTS // NEXUS_CORP
-    </footer>
+        <div class="p-8 border border-white/5 bg-zinc-950/50 rounded-2xl hover:border-white/20 transition-colors group">
+          <div class="mb-6 w-12 h-12 bg-zinc-900 rounded-lg flex items-center justify-center text-white group-hover:scale-110 transition-transform duration-500">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+          </div>
+          <h3 class="text-xl font-light mb-2">GitHub Intelligence</h3>
+          <p class="text-sm text-zinc-500 leading-relaxed">Import repositories and auto-generate project boards with tasks, dependencies, and priorities based on code analysis.</p>
+        </div>
+
+        <div class="p-8 border border-white/5 bg-zinc-950/50 rounded-2xl hover:border-white/20 transition-colors group">
+          <div class="mb-6 w-12 h-12 bg-zinc-900 rounded-lg flex items-center justify-center text-white group-hover:scale-110 transition-transform duration-500">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+          </div>
+          <h3 class="text-xl font-light mb-2">AI Agent</h3>
+          <p class="text-sm text-zinc-500 leading-relaxed">Floating AI assistant with physics-based interactions. Create projects, tasks, and files through natural conversation.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Technical Stack Section -->
+  <section class="py-32 relative z-10 bg-zinc-950">
+    <div class="max-w-7xl mx-auto px-6">
+      <h2 class="text-3xl md:text-5xl font-thin tracking-tight text-white mb-16 text-center">Built with Modern Tech</h2>
+      
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+        <div class="p-6">
+          <div class="text-zinc-400 text-sm font-mono mb-2">Framework</div>
+          <div class="text-white font-light text-lg">Angular 21</div>
+          <div class="text-zinc-600 text-xs mt-1">Zoneless, Signals</div>
+        </div>
+        
+        <div class="p-6">
+          <div class="text-zinc-400 text-sm font-mono mb-2">AI Core</div>
+          <div class="text-white font-light text-lg">Gemini 2.0</div>
+          <div class="text-zinc-600 text-xs mt-1">Flash Model</div>
+        </div>
+        
+        <div class="p-6">
+          <div class="text-zinc-400 text-sm font-mono mb-2">Styling</div>
+          <div class="text-white font-light text-lg">Tailwind CSS</div>
+          <div class="text-zinc-600 text-xs mt-1">Dark Mode</div>
+        </div>
+        
+        <div class="p-6">
+          <div class="text-zinc-400 text-sm font-mono mb-2">Visualization</div>
+          <div class="text-white font-light text-lg">D3.js</div>
+          <div class="text-zinc-600 text-xs mt-1">Force Simulations</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="py-12 bg-zinc-950 text-center border-t border-white/5 space-y-3">
+    <div class="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">
+      ODUS © 2025 • All Rights Reserved
+    </div>
+    <div class="text-[10px] text-zinc-600 flex justify-center gap-4 font-mono uppercase">
+      <a href="https://github.com/amuzetnoM/ODUS" target="_blank" class="hover:text-zinc-400 transition-colors">GitHub</a>
+      <span class="w-px h-3 bg-zinc-800"></span>
+      <span>AI-First Architecture</span>
+      <span class="w-px h-3 bg-zinc-800"></span>
+      <span>v1.4.0</span>
+    </div>
+  </footer>
 
 </body>
 </html>
