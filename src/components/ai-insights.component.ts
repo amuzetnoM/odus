@@ -1,5 +1,5 @@
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PredictiveAiService } from '../services/predictive-ai.service';
 import { ProjectService } from '../services/project.service';
@@ -110,7 +110,7 @@ import { ProjectService } from '../services/project.service';
   `,
   styles: []
 })
-export class AiInsightsComponent {
+export class AiInsightsComponent implements OnInit {
   private predictiveAi = inject(PredictiveAiService);
   private projectService = inject(ProjectService);
 

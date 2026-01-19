@@ -37,7 +37,7 @@ export class GithubService {
     return this.token();
   }
 
-  private async fetch(endpoint: string, method: string = 'GET', body?: any) {
+  private async fetch(endpoint: string, method: string = 'GET', body?: Record<string, any>) {
     if (!this.token()) throw new Error('GitHub Token required');
     
     const options: RequestInit = {

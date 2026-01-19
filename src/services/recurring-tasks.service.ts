@@ -1,5 +1,5 @@
 
-import { Injectable, signal, effect, inject } from '@angular/core';
+import { Injectable, signal, effect, inject, OnDestroy } from '@angular/core';
 import { ProjectService, Task } from './project.service';
 import { NotificationService } from './notification.service';
 
@@ -25,7 +25,7 @@ export interface RecurringTask {
 @Injectable({
   providedIn: 'root'
 })
-export class RecurringTasksService {
+export class RecurringTasksService implements OnDestroy {
   private projectService = inject(ProjectService);
   private notification = inject(NotificationService);
   

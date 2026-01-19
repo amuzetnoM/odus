@@ -65,7 +65,7 @@ export class TimeTrackingService {
     const weeklyTotal = weeklyLogs.reduce((sum, log) => sum + (log.duration || 0), 0);
     const monthlyTotal = monthlyLogs.reduce((sum, log) => sum + (log.duration || 0), 0);
 
-    const dailyAverage = dailyTotal / 1;
+    const dailyAverage = dailyTotal;
     const completedTasks = new Set(logs.filter(log => log.endTime).map(log => log.taskId)).size;
     const totalLogs = logs.filter(log => log.endTime).length;
     const taskCompletionRate = totalLogs > 0 ? completedTasks / totalLogs : 0;

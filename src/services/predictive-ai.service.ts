@@ -162,7 +162,10 @@ export class PredictiveAiService {
     const temp = new Set<string>();
 
     const visit = (task: Task) => {
-      if (temp.has(task.id)) return;
+      if (temp.has(task.id)) {
+        console.warn(`Circular dependency detected for task: ${task.title}`);
+        return;
+      }
       if (visited.has(task.id)) return;
 
       temp.add(task.id);

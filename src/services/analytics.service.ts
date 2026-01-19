@@ -216,7 +216,8 @@ export class AnalyticsService {
     const weeklyRate = completionRates.find(r => r.period === 'This Week')?.rate || 0;
     
     const velocity = this.timeTracking.velocityMetrics();
-    const timeScore = Math.min(100, (velocity.weeklyTotal / 14400) * 100);
+    const FOUR_HOURS_IN_SECONDS = 4 * 60 * 60;
+    const timeScore = Math.min(100, (velocity.weeklyTotal / FOUR_HOURS_IN_SECONDS) * 100);
     
     const activeTasks = tasks.filter(t => t.status !== 'done');
     const highPriorityCompliance = activeTasks.filter(t => 
