@@ -53,6 +53,12 @@ export class TaskCardComponent {
   task = input.required<Task>();
   projectColor = input<string>('#52525b');
   
+  // Display-friendly title (truncated for card display)
+  displayTitle = computed(() => {
+    const t = this.task().title || '';
+    return t.length > 80 ? t.slice(0, 80).trim() + '…' : t;
+  });
+
   onDragStart(event: DragEvent) {
     if (event.dataTransfer) {
       event.dataTransfer.setData('text/plain', this.task().id);
