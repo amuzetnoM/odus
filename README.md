@@ -10,7 +10,7 @@
 
 </div>
 
-**ODUS** is a comprehensive, AI-native project management suite that reimagines how teams plan, execute, and visualize work. Built with a zoneless Angular architecture and powered by Google's Gemini 2.0 AI, ODUS generates project structures, detects dependencies, and provides intelligent insights—all while keeping your data local-first.
+**ODUS** is a comprehensive, AI-native project management suite that reimagines how teams plan, execute, and visualize work. Built with a zoneless Angular architecture and powered by a provider-agnostic AI core (default: Google Gemini 2.0), ODUS generates project structures, detects dependencies, and provides intelligent insights—all while keeping your data local-first.
 
 ---
 
@@ -56,7 +56,7 @@
 
 ### Prerequisites
 - **Node.js** 18+ ([Download](https://nodejs.org/))
-- **Gemini API Key** ([Get Free Key](https://makersuite.google.com/app/apikey))
+- **AI Provider credentials** (Gemini/OpenAI/Anthropic/OpenRouter/Ollama local). See **Settings → API Configuration** in-app for setup instructions.
 
 ### Installation
 
@@ -101,7 +101,7 @@ Comprehensive documentation is available in the `/docs` directory:
 |-------|-----------|
 | **Framework** | Angular 21 (Standalone Components, Signals) |
 | **State Management** | Angular Signals (Zoneless) |
-| **AI Engine** | Google Gemini 2.0 Flash |
+| **AI Engine** | Provider-agnostic (default: Google Gemini 2.0) |
 | **Styling** | Tailwind CSS 3 + Custom CSS Variables |
 | **Visualizations** | D3.js (Force Simulations, Graphs) |
 | **Storage** | IndexedDB (via native API) |

@@ -2,7 +2,7 @@
 # ODUS AI - System Documentation
 
 ![Angular](https://img.shields.io/badge/Angular-v18+-dd0031?style=flat-square&logo=angular)
-![Gemini](https://img.shields.io/badge/AI-Gemini_2.0_Flash-8e75b2?style=flat-square&logo=google-gemini)
+![AI](https://img.shields.io/badge/AI-Provider_Agnostic-8e75b2?style=flat-square)
 ![Tailwind](https://img.shields.io/badge/Style-Tailwind_CSS-38bdf8?style=flat-square&logo=tailwindcss)
 ![Version](https://img.shields.io/badge/Version-1.3.0-blue?style=flat-square)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen?style=flat-square)
@@ -10,7 +10,7 @@
 **Version:** 1.3.0  
 **Framework:** Angular 18+ (Zoneless, Signals)  
 **Styling:** Tailwind CSS (Dark/Light Mode Support)  
-**AI Core:** Google Gemini 2.0 Flash
+**AI Core:** Provider-agnostic (default: Google Gemini 2.0) — supports OpenAI, Anthropic, Ollama (local), OpenRouter
 
 ---
 
@@ -90,7 +90,7 @@ Manages the "Knowledge Graph" of ideas.
 ## 4. Development Setup
 
 1.  **Install Dependencies:** No `npm install` required (ESM imports via CDN).
-2.  **Environment:** Ensure `process.env.API_KEY` is set with a valid Gemini API Key.
+2.  **Environment:** Ensure `process.env.API_KEY` or provider-specific key is set (e.g., `GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or local Ollama model name). See `GeminiService` docs for provider config.
 3.  **Run:** Standard Angular CLI serve.
 
 ```bash

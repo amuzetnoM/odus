@@ -52,7 +52,7 @@ last_updated: 2026-01-19
 ### What Makes ODUS Unique
 
 - **Local-First**: All data in browser (IndexedDB), zero server dependencies
-- **AI-Native**: Gemini 2.0 for project generation, task analysis, and automation
+- **AI-Native**: Provider-agnostic AI core (default: Gemini 2.0) for project generation, task analysis, and automation
 - **Cross-Connected**: Tasks ↔ Mind Nodes ↔ Files with bidirectional relationships
 - **Success Roadmap**: Weighted algorithm identifies critical path through projects
 - **GitHub Intelligence**: Analyzes codebases and generates actionable tasks
@@ -78,7 +78,7 @@ last_updated: 2026-01-19
 ### Tech Stack
 
 - **Framework**: Angular 21.1 (zoneless, signals)
-- **AI**: Google Generative AI SDK (Gemini 2.0 Flash)
+- **AI**: Provider-agnostic AI integration (default: Google Generative AI / Gemini 2.0). See API reference for supported providers.
 - **Visualization**: D3.js (force-directed graphs)
 - **Storage**: IndexedDB (local-first)
 - **Styling**: Tailwind CSS 3
