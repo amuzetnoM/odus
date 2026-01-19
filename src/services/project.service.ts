@@ -22,7 +22,10 @@ export interface TaskMetadata {
   location?: string;
   notes?: string;
   dueDate?: string;
-  mindNodeId?: string;  // Reference to linked mind map node
+  mindNodeId?: string;
+  githubIssueNumber?: number;
+  githubRepo?: string;
+  recurringTaskId?: string;
 }
 
 export interface Task {
