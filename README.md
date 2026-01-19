@@ -7,7 +7,7 @@
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen?style=flat-square)
 
 <div align="center">
-<img width="1200" height="475" alt="ODUS Banner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+
 </div>
 
 **ODUS** is a comprehensive, AI-native project management suite that reimagines how teams plan, execute, and visualize work. Built with a zoneless Angular architecture and powered by Google's Gemini 2.0 AI, ODUS generates project structures, detects dependencies, and provides intelligent insights—all while keeping your data local-first.
