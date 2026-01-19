@@ -19,10 +19,6 @@ import { SuccessRoadmapComponent } from './success-roadmap.component';
       <div class="mb-8 flex flex-wrap items-end gap-4 shrink-0">
          <div class="min-w-[120px] mr-auto flex flex-col gap-1">
             <h1 class="text-2xl font-extralight text-white tracking-widest mb-0">SCOPE</h1>
-            <div class="flex items-center gap-2">
-               <p class="text-xs text-zinc-500 font-light tracking-wide uppercase">System Status: Nominal</p>
-               <button (click)="resetSystem()" class="text-[9px] text-red-900 hover:text-red-500 hover:bg-red-950/20 px-1 rounded transition-colors uppercase border border-transparent hover:border-red-900" title="Wipe all data">Reset</button>
-            </div>
          </div>
          
          <!-- Smart Quick Add Form (Right Aligned) -->
@@ -195,12 +191,6 @@ export class DashboardComponent {
       .filter((t: any) => t.inFocusList && t.status !== 'done')
       .sort((a: any, b: any) => (a.focusIndex ?? 9999) - (b.focusIndex ?? 9999));
   });
-
-  resetSystem() {
-      if(confirm('FACTORY RESET: This will wipe all projects and local data. Continue?')) {
-          this.projectService.hardReset();
-      }
-  }
 
   async quickAdd() {
       const title = this.quickTaskTitle().trim();

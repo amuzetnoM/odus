@@ -1,5 +1,5 @@
 
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GithubService } from '../../services/github.service';
@@ -20,23 +20,19 @@ import { ProjectService } from '../../services/project.service';
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
              </button>
              <div class="flex items-center gap-3">
-                 <div class="w-2 h-2 rounded-full bg-white shadow-[0_0_8px_white]"></div>
+                 <div class="w-2 h-2 rounded-full shadow-[0_0_8px_white]" [class.bg-green-500]="hasToken()" [class.bg-red-500]="!hasToken()"></div>
                  <span class="text-xs font-bold tracking-widest text-zinc-300 uppercase hidden sm:block">GitHub Intelligence</span>
              </div>
           </div>
           
           <div class="flex gap-2 items-center">
-             <div class="relative group">
-                 <input 
-                   [ngModel]="token()"
-                   (change)="updateToken($event)"
-                   type="password"
-                   class="bg-zinc-950 border border-zinc-800 rounded-sm px-3 py-1.5 text-[10px] text-zinc-400 w-32 focus:w-64 focus:text-white focus:border-zinc-600 transition-all outline-none font-mono tracking-wide"
-                   placeholder="GH_TOKEN"
-                 />
-                 <div class="absolute right-2 top-2 w-1.5 h-1.5 rounded-full" [class.bg-green-500]="!!token()" [class.bg-red-500]="!token()"></div>
-             </div>
-             <button (click)="fetchRepos()" class="bg-white/5 hover:bg-white/10 border border-white/5 text-zinc-300 p-1.5 rounded-sm transition-colors" title="Sync Repos">
+             @if (!hasToken()) {
+                 <div class="flex items-center gap-2 px-3 py-1.5 rounded border border-red-900/30 bg-red-900/10 text-red-400 text-[10px] uppercase tracking-wide">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    <span>Config Required</span>
+                 </div>
+             }
+             <button (click)="fetchRepos()" class="bg-white/5 hover:bg-white/10 border border-white/5 text-zinc-300 p-1.5 rounded-sm transition-colors" title="Force Sync">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
              </button>
           </div>
@@ -55,7 +51,6 @@ import { ProjectService } from '../../services/project.service';
              <div class="p-4 border-b border-white/5 space-y-3 bg-zinc-950/50 shrink-0">
                 <div class="flex justify-between items-center">
                     <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Repositories</span>
-                    <!-- Close button always available since it's a floating drawer now -->
                     <button (click)="isRepoListOpen.set(false)" class="text-zinc-500 hover:text-white">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
@@ -206,7 +201,13 @@ import { ProjectService } from '../../services/project.service';
                       <svg class="w-8 h-8 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
                    </div>
                    <h3 class="text-lg font-light text-zinc-400 tracking-widest mb-2">NO SIGNAL</h3>
-                   <p class="text-xs font-mono uppercase tracking-widest text-zinc-600">Select a repository from the stream to begin analysis.</p>
+                   <p class="text-xs font-mono uppercase tracking-widest text-zinc-600">
+                      @if(hasToken()) {
+                          Select a repository from the stream to begin analysis.
+                      } @else {
+                          Configure GitHub Access Token in Settings to enable intelligence.
+                      }
+                   </p>
                 </div>
              }
           </div>
@@ -228,10 +229,10 @@ export class GithubViewComponent {
   persistence = inject(PersistenceService);
   projectService = inject(ProjectService);
   
-  token = signal('');
   repos = signal<any[]>([]);
   searchQuery = signal('');
   selectedRepo = signal<any>(null);
+  hasToken = signal(false);
   
   // Filters
   filterSourceOnly = signal(true);
@@ -257,17 +258,20 @@ export class GithubViewComponent {
   });
 
   constructor() {
-      this.token.set(this.githubService.getToken());
-      if (this.token()) this.fetchRepos();
-      
       // Responsive check on init
       if (window.innerWidth < 1024) {
           this.isRepoListOpen.set(false);
       }
-  }
 
-  updateToken(event: any) {
-      this.githubService.setToken(event.target.value);
+      // Reactive Auto-Loader
+      effect(() => {
+          const token = this.githubService.getToken();
+          this.hasToken.set(!!token);
+          
+          if (token && this.repos().length === 0) {
+              this.fetchRepos();
+          }
+      });
   }
   
   toggleRepoList() {
@@ -275,12 +279,14 @@ export class GithubViewComponent {
   }
 
   async fetchRepos() {
+      if (!this.hasToken()) return;
       try {
           const repos = await this.githubService.getUserRepos();
           this.repos.set(repos);
           this.isRepoListOpen.set(true);
       } catch (e) {
-          alert('Failed to sync GitHub. Check Token.');
+          // Silent fail or UI indicator handled by empty state logic
+          console.error("Failed to sync repos", e);
       }
   }
 

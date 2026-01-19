@@ -38,7 +38,25 @@ import { NotificationService, NotificationType } from '../services/notification.
                   }
                   
                   <div class="flex gap-3 items-start">
-                      <span class="text-lg leading-none mt-0.5">{{ getIcon(item.type) }}</span>
+                      <div class="shrink-0 mt-0.5">
+                           @switch (item.type) {
+                               @case ('success') {
+                                   <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                               }
+                               @case ('error') {
+                                   <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                               }
+                               @case ('warning') {
+                                   <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                               }
+                               @case ('critical') {
+                                   <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                               }
+                               @case ('info') {
+                                   <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                               }
+                           }
+                      </div>
                       <div class="flex-1 min-w-0">
                           <div class="flex justify-between items-start mb-1">
                               <h5 class="text-xs font-bold text-zinc-200 truncate pr-2" [class.text-white]="!item.read">{{ item.title }}</h5>
@@ -50,7 +68,7 @@ import { NotificationService, NotificationType } from '../services/notification.
                </div>
            } @empty {
                <div class="h-full flex flex-col items-center justify-center text-zinc-600 opacity-50 p-8 text-center">
-                   <span class="text-2xl mb-2">🔕</span>
+                   <svg class="w-8 h-8 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                    <p class="text-xs font-mono uppercase">System Quiet</p>
                </div>
            }
@@ -73,15 +91,4 @@ import { NotificationService, NotificationType } from '../services/notification.
 export class NotificationPanelComponent {
   close = output();
   notificationService = inject(NotificationService);
-
-  getIcon(type: NotificationType): string {
-      switch(type) {
-          case 'success': return '✅';
-          case 'error': return '❌';
-          case 'warning': return '🔶';
-          case 'critical': return '⭕️';
-          case 'info': return 'ℹ️';
-          default: return '⬜️';
-      }
-  }
 }

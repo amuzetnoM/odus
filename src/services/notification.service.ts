@@ -10,29 +10,37 @@ export interface AppNotification {
   type: NotificationType;
   timestamp: string;
   read: boolean;
-  projectId?: string; // Optional link to project
-  taskId?: string; // Optional link to task
+  projectId?: string; 
+  taskId?: string; 
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class NotificationService {
-  // Transient toasts (disappear after a few seconds)
+  // Transient toasts
   readonly toasts = signal<AppNotification[]>([]);
   
-  // Persistent Inbox (held for user login / review)
+  // Persistent Inbox
   readonly inbox = signal<AppNotification[]>([]);
   readonly unreadCount = signal(0);
+  
+  // Proactive AI Message Stream (Consumed by AiAgentComponent)
+  readonly incomingAiMessage = signal<{text: string, timestamp: Date} | null>(null);
 
   constructor() {
       this.loadInbox();
       
-      // Update unread count whenever inbox changes
+      // Update unread count
       effect(() => {
           this.unreadCount.set(this.inbox().filter(n => !n.read).length);
           this.saveInbox();
       });
+
+      // Request permissions early if possible
+      if ('Notification' in window && Notification.permission === 'default') {
+          Notification.requestPermission();
+      }
   }
 
   /**
@@ -61,7 +69,6 @@ export class NotificationService {
 
     // 2. Add to Inbox (Persistence) if requested or if it's critical/warning
     if (options.persist || type === 'critical' || type === 'warning') {
-        // Prevent duplicate spam: Check if similar unread msg exists from last minute
         const isDuplicate = this.inbox().some(n => 
             !n.read && 
             n.title === title && 
@@ -73,6 +80,40 @@ export class NotificationService {
             this.inbox.update(prev => [notification, ...prev]);
         }
     }
+  }
+
+  /**
+   * Proactive AI Communication Channel
+   * Decides whether to chat (Online) or Notify (Offline/Background)
+   */
+  broadcastAiAgentMessage(message: string) {
+      const isAppVisible = document.visibilityState === 'visible';
+
+      if (isAppVisible) {
+          // User is online/active: Send directly to Chat Interface
+          this.incomingAiMessage.set({ text: message, timestamp: new Date() });
+          
+          // Also show a subtle info toast just in case chat is closed
+          this.notify('ODUS Intelligence', 'New suggestion available in chat.', 'info');
+      } else {
+          // User is offline/tabbed away: Send System Notification
+          this.sendSystemNotification('ODUS Project Manager', message);
+          
+          // Queue it for when they return
+          this.incomingAiMessage.set({ text: message, timestamp: new Date() });
+      }
+  }
+
+  private sendSystemNotification(title: string, body: string) {
+      if (!('Notification' in window)) return;
+
+      if (Notification.permission === 'granted') {
+          new Notification(title, {
+              body: body,
+              icon: '/assets/icon.png', // Fallback if exists, browser handles default
+              tag: 'odus-ai-msg' // Prevents stacking
+          });
+      }
   }
 
   markRead(id: string) {
@@ -91,7 +132,6 @@ export class NotificationService {
     this.toasts.update(prev => prev.filter(t => t.id !== id));
   }
 
-  // --- Persistence ---
   private loadInbox() {
       try {
           const data = localStorage.getItem('artifact_notifications');
@@ -100,7 +140,6 @@ export class NotificationService {
   }
 
   private saveInbox() {
-      // Limit inbox size to last 50 items to save space
       const safeList = this.inbox().slice(0, 50);
       localStorage.setItem('artifact_notifications', JSON.stringify(safeList));
   }

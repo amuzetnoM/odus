@@ -3,6 +3,7 @@ import { Injectable, signal, computed, effect, inject } from '@angular/core';
 import { NotificationService } from './notification.service';
 import { PersistenceService } from './persistence.service';
 import { AuthService } from './auth.service';
+import { GeminiService } from './gemini.service';
 
 export type TaskStatus = 'todo' | 'in-progress' | 'done';
 export type Priority = 'low' | 'medium' | 'high';
@@ -48,20 +49,13 @@ export interface Project {
   tasks: Task[];
   createdAt: string;
   isArchived?: boolean;
-  color?: string; // Hex color for UI distinction
+  color?: string; 
 }
 
 const PROJECT_COLORS = [
-    '#3b82f6', // blue-500
-    '#10b981', // emerald-500
-    '#f59e0b', // amber-500
-    '#ef4444', // red-500
-    '#8b5cf6', // violet-500
-    '#ec4899', // pink-500
-    '#06b6d4', // cyan-500
-    '#f97316', // orange-500
-    '#14b8a6', // teal-500
-    '#d946ef', // fuchsia-500
+    '#3b82f6', '#10b981', '#f59e0b', '#ef4444', 
+    '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', 
+    '#14b8a6', '#d946ef'
 ];
 
 @Injectable({
@@ -71,14 +65,14 @@ export class ProjectService {
   private notification = inject(NotificationService);
   private persistence = inject(PersistenceService);
   private authService = inject(AuthService);
+  private geminiService = inject(GeminiService);
 
   private projectsState = signal<Project[]>([]);
   private activeProjectIdsState = signal<string[]>([]);
   private personalTasksState = signal<Task[]>([]);
   private saveTimeout: any;
 
-  // System Monitor State
-  private monitoredTasks = new Set<string>(); // Tracks IDs of tasks we've already alerted about today
+  private monitoredTasks = new Set<string>();
 
   readonly projects = this.projectsState.asReadonly();
   readonly activeProjectIds = this.activeProjectIdsState.asReadonly();
@@ -110,7 +104,6 @@ export class ProjectService {
     return [...projectTasks, ...personal];
   });
 
-  // Metrics
   readonly metrics = computed(() => {
       const all = this.allTasks();
       const total = all.length;
@@ -127,7 +120,6 @@ export class ProjectService {
       }
       
       const health = total === 0 ? 100 : Math.round((completed / total) * 100);
-      
       return { total, completed, inProgress, highPriority, focusCount, health };
   });
 
@@ -135,7 +127,6 @@ export class ProjectService {
     this.loadFromStorage();
     this.startSystemMonitor();
     
-    // Debounced Save Effect
     effect(() => {
         const p = this.projectsState();
         const pt = this.personalTasksState();
@@ -147,9 +138,7 @@ export class ProjectService {
     });
   }
 
-  // --- System Monitor Logic ---
   private startSystemMonitor() {
-      // Run immediately on load, then every 60 seconds
       this.checkDeadlines();
       setInterval(() => this.checkDeadlines(), 60000);
   }
@@ -161,47 +150,15 @@ export class ProjectService {
       
       all.forEach((task: any) => {
           if (task.status === 'done') return;
-          
-          // Generate unique alert key for today to prevent spam
           const alertKey = `${task.id}-${todayStr}`;
-          
           if (this.monitoredTasks.has(alertKey)) return;
 
-          // 1. Critical Overdue Check
           if (task.endDate && task.endDate < todayStr) {
-             this.notification.notify(
-                 'Overdue Artifact',
-                 `"${task.title}" is past due. Immediate action required.`,
-                 'critical',
-                 { projectId: task.projectId, taskId: task.id }
-             );
+             this.notification.notify('Overdue Artifact', `"${task.title}" is past due.`, 'critical', { projectId: task.projectId, taskId: task.id });
              this.monitoredTasks.add(alertKey);
-          }
-
-          // 2. Approaching Deadline (Due Today)
-          else if (task.endDate === todayStr) {
-             this.notification.notify(
-                 'Due Today',
-                 `"${task.title}" is scheduled for completion today.`,
-                 'warning',
-                 { projectId: task.projectId, taskId: task.id }
-             );
+          } else if (task.endDate === todayStr) {
+             this.notification.notify('Due Today', `"${task.title}" is due.`, 'warning', { projectId: task.projectId, taskId: task.id });
              this.monitoredTasks.add(alertKey);
-          }
-
-          // 3. Focus List Neglect (High Prio, In Focus, No progress for 3 days)
-          // (Simplified logic: just check if it's High Prio in focus)
-          else if (task.inFocusList && task.priority === 'high' && !this.monitoredTasks.has(alertKey)) {
-             // Lower frequency check logic could go here, for now we just remind once a day
-             /*
-             this.notification.notify(
-                 'Focus Target',
-                 `High Priority Focus: "${task.title}" needs attention.`,
-                 'info',
-                 { projectId: task.projectId, taskId: task.id, persist: true }
-             );
-             this.monitoredTasks.add(alertKey);
-             */
           }
       });
   }
@@ -210,24 +167,28 @@ export class ProjectService {
       try {
           const storedProjects = localStorage.getItem('artifact_projects');
           const storedPersonal = localStorage.getItem('artifact_personal');
-          
           if (storedProjects) this.projectsState.set(JSON.parse(storedProjects));
           if (storedPersonal) this.personalTasksState.set(JSON.parse(storedPersonal));
       } catch (e) { console.error('Failed to load storage', e); }
   }
 
-  // --- Reset Capability ---
-  hardReset() {
+  async hardReset() {
       this.projectsState.set([]);
       this.personalTasksState.set([]);
       this.activeProjectIdsState.set([]);
       
-      localStorage.removeItem('artifact_projects');
-      localStorage.removeItem('artifact_personal');
-      this.notification.show('System Factory Reset Complete', 'info');
+      const keysToRemove = [
+          'artifact_projects', 'artifact_personal', 'artifact_user_profile',
+          'artifact_notifications', 'artifact_chat_history', 'artifact_mind_nodes',
+          'artifact_files', 'gh_token', 'gemini_api_key'
+      ];
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+
+      await this.persistence.resetDatabase();
+      window.location.reload();
   }
 
-  addProject(title: string, description: string, tasks: Task[]) {
+  async addProject(title: string, description: string, tasks: Task[]) {
     const randomColor = PROJECT_COLORS[Math.floor(Math.random() * PROJECT_COLORS.length)];
     
     const newProject: Project = {
@@ -246,6 +207,15 @@ export class ProjectService {
     this.toggleProjectActive(newProject.id, true);
     
     this.notification.notify('Project Initialized', `"${title}" has been successfully instantiated.`, 'success');
+
+    // Trigger Smart AI Manager Insight (Non-blocking)
+    try {
+        const insight = await this.geminiService.generateManagerialInsight({
+            title, description, taskCount: tasks.length, tasks
+        });
+        this.notification.broadcastAiAgentMessage(insight);
+    } catch(e) { console.error("Auto-manager failed", e); }
+
     return newProject;
   }
 
@@ -270,10 +240,7 @@ export class ProjectService {
         this.projectsState.update(projects =>
             projects.map(p => {
                 if (p.id === projectId) {
-                    return {
-                        ...p,
-                        tasks: p.tasks.map(t => t.id === taskId ? { ...t, ...updates } : t)
-                    };
+                    return { ...p, tasks: p.tasks.map(t => t.id === taskId ? { ...t, ...updates } : t) };
                 }
                 return p;
             })
@@ -326,7 +293,6 @@ export class ProjectService {
         );
     }
     
-    // Smart Notification: Check if high priority
     if (newTask.priority === 'high') {
         this.notification.notify('Critical Artifact Created', `"${newTask.title}" added to queue.`, 'warning');
     } else {
@@ -338,9 +304,7 @@ export class ProjectService {
 
   moveTask(taskId: string, fromProjectId: string, toProjectId: string) {
       if (fromProjectId === toProjectId) return;
-
       let taskToMove: Task | undefined;
-
       if (fromProjectId === 'personal') {
           this.personalTasksState.update(tasks => {
               taskToMove = tasks.find(t => t.id === taskId);

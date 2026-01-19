@@ -157,6 +157,58 @@ type SettingsTab = 'profile' | 'system';
                     </div>
                     <p class="text-[9px] text-zinc-600 mt-2">Required for repository analysis. Needs 'repo' scope.</p>
                 </div>
+
+                <!-- Danger Zone -->
+                <div class="pt-6 mt-6 border-t border-red-900/30">
+                    <h3 class="text-[10px] font-bold text-red-500 uppercase tracking-widest mb-2">Danger Zone</h3>
+                    
+                    @if (!showResetConfirmation()) {
+                        <button 
+                            (click)="showResetConfirmation.set(true)"
+                            class="w-full py-3 bg-red-900/10 border border-red-900/30 text-red-500 text-xs font-bold uppercase tracking-widest rounded hover:bg-red-900/20 hover:border-red-500/50 transition-all flex items-center justify-center gap-2 group">
+                            <svg class="w-4 h-4 opacity-70 group-hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            Factory Reset Workspace
+                        </button>
+                    } @else {
+                        <div class="bg-red-950/10 border border-red-900/30 rounded p-4 space-y-4 animate-scale-in">
+                            <div class="flex items-start gap-3">
+                                <div class="p-2 bg-red-900/20 rounded text-red-500 shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-bold text-red-400 uppercase tracking-wide mb-1">Irreversible Action</h4>
+                                    <p class="text-[10px] text-red-400/80 leading-relaxed">
+                                        This will permanently delete all projects, files, settings, and API keys. The application will reboot to a blank state.
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-[9px] font-bold text-red-500/70 uppercase tracking-widest mb-2">Type "RESET" to confirm</label>
+                                <input 
+                                    type="text" 
+                                    [(ngModel)]="resetConfirmation"
+                                    class="w-full bg-zinc-950 border border-red-900/30 rounded p-2 text-xs text-red-400 focus:outline-none focus:border-red-500 placeholder:text-red-900/50"
+                                    placeholder="RESET"
+                                />
+                            </div>
+
+                            <div class="flex gap-2">
+                                <button 
+                                    (click)="showResetConfirmation.set(false); resetConfirmation.set('')"
+                                    class="flex-1 py-2 bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-bold uppercase tracking-widest rounded hover:bg-zinc-800 transition-colors">
+                                    Cancel
+                                </button>
+                                <button 
+                                    (click)="performFactoryReset()"
+                                    [disabled]="resetConfirmation() !== 'RESET'"
+                                    class="flex-1 py-2 bg-red-600 text-white text-xs font-bold uppercase tracking-widest rounded hover:bg-red-500 transition-colors disabled:opacity-50 disabled:bg-red-900/20 disabled:text-red-500 disabled:cursor-not-allowed">
+                                    Confirm Reset
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
               </div>
            }
         </div>
@@ -181,6 +233,9 @@ type SettingsTab = 'profile' | 'system';
   styles: [`
      @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
      .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+     
+     @keyframes scaleIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+     .animate-scale-in { animation: scaleIn 0.2s ease-out; }
   `]
 })
 export class SettingsModalComponent {
@@ -193,6 +248,10 @@ export class SettingsModalComponent {
 
   activeTab = signal<SettingsTab>('profile');
   isTesting = signal(false);
+  
+  // Danger Zone State
+  showResetConfirmation = signal(false);
+  resetConfirmation = signal('');
 
   // System State
   geminiKey = signal(localStorage.getItem('gemini_api_key') || '');
@@ -222,6 +281,12 @@ export class SettingsModalComponent {
       this.deviceNotifications.set(newState);
       if (newState) {
           this.authService.requestNotificationPermission();
+      }
+  }
+
+  performFactoryReset() {
+      if (this.resetConfirmation() === 'RESET') {
+          this.projectService.hardReset();
       }
   }
 
@@ -263,11 +328,11 @@ export class SettingsModalComponent {
              this.githubService.setToken(ghToken);
           }
 
-          this.notification.show('Settings Updated Successfully', 'success');
+          this.notification.notify('Success', 'Settings Updated Successfully', 'success');
           this.close.emit();
 
       } catch (e: any) {
-          this.notification.show(e.message || 'Error Saving Settings', 'error');
+          this.notification.notify('Error', e.message || 'Error Saving Settings', 'error');
       } finally {
           this.isTesting.set(false);
       }

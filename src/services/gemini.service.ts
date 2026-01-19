@@ -8,8 +8,8 @@ export interface AgentResponse {
   text: string;
   groundingMetadata?: any;
   toolCall?: {
-    type: 'create_note' | 'create_task' | 'update_task_status' | 'navigate';
-    data: any; // Flexible data structure for different tools
+    type: string;
+    data: any; 
   };
 }
 
@@ -30,8 +30,6 @@ export class GeminiService {
   }
 
   private init() {
-    // Production Requirement: Keys are strictly user-managed via Settings (LocalStorage)
-    // No process.env fallback to prevent accidental commit leakage
     const key = localStorage.getItem('gemini_api_key') || '';
     this.ai = new GoogleGenAI({ apiKey: key });
   }
@@ -57,6 +55,40 @@ export class GeminiService {
   }
 
   // --- Smart Features ---
+
+  async generateManagerialInsight(projectContext: { title: string, description: string, taskCount: number, tasks: Task[] }): Promise<string> {
+      const model = 'gemini-2.5-flash';
+      
+      const prompt = `
+        You are ODUS, a proactive Senior Technical Project Manager.
+        A new project "${projectContext.title}" has just been imported/created.
+        
+        Context:
+        - Description/Repo Summary: ${projectContext.description}
+        - Total Tasks: ${projectContext.taskCount}
+        - Sample Tasks: ${JSON.stringify(projectContext.tasks.slice(0, 5).map(t => t.title))}
+
+        Your Goal:
+        Identify ONE critical gap or next step. Do NOT summarize what was just done. Look forward.
+        Examples:
+        - If no testing tasks: "I noticed the repo doesn't have a CI pipeline task. Should I create one?"
+        - If many features: "That's a lot of features. Do you want to prioritize the MVP items for the Focus list?"
+        - If generic: "Project initialized. Would you like me to draft a release schedule based on these tasks?"
+
+        Output:
+        A single, conversational sentence addressed to the user. Max 25 words.
+      `;
+
+      try {
+          const response = await this.ai.models.generateContent({
+              model,
+              contents: prompt
+          });
+          return response.text?.trim() || `Project "${projectContext.title}" initialized. Ready for commands.`;
+      } catch (e) {
+          return `Project "${projectContext.title}" imported successfully.`;
+      }
+  }
 
   async getDailyBriefing(dayTasks: { starting: any[], due: any[], ongoing: any[] }, overallMetrics: any): Promise<DayBriefing> {
     const model = 'gemini-2.5-flash';
@@ -154,7 +186,6 @@ export class GeminiService {
   }
 
   async curateFocusList(allTasks: any[]): Promise<{ taskIds: string[], reasoning: string }> {
-      // Filter candidates to avoid overwhelming token limits (only todo/in-progress)
       const candidates = allTasks
         .filter(t => t.status !== 'done')
         .map(t => ({ id: t.id, title: t.title, priority: t.priority, project: t.projectTitle }));
@@ -189,7 +220,6 @@ export class GeminiService {
       }
   }
 
-  // --- Mind Board Logic ---
   async analyzeIdea(content: string, existingNodesSummary: any[]): Promise<{
     title: string;
     properties: Record<string, string>;
@@ -229,7 +259,6 @@ export class GeminiService {
                                   status: { type: Type.STRING },
                                   impact: { type: Type.STRING }
                               },
-                              // Allow flexibility, though strict schema helps
                           },
                           tags: { type: Type.ARRAY, items: { type: Type.STRING } },
                           relatedNodeIds: { type: Type.ARRAY, items: { type: Type.STRING } }
@@ -250,7 +279,6 @@ export class GeminiService {
       }
   }
 
-  // --- Repo Analysis (Exhaustive + Review Loop) ---
   async analyzeRepoAndPlan(
       repoName: string, 
       fileStructure: string, 
@@ -263,18 +291,10 @@ export class GeminiService {
     // --- PASS 1: INITIAL DRAFT ---
     const context = `
       Repo: ${repoName}
-      
-      File Structure (Summary):
-      ${fileStructure}
-      
-      Recent Commits:
-      ${commitHistory}
-      
-      README Preview:
-      ${readme ? readme.substring(0, 1500) : 'Not available'}
-      
-      Package/Config Preview:
-      ${packageJson ? packageJson.substring(0, 1000) : 'Not available'}
+      File Structure: ${fileStructure}
+      Commits: ${commitHistory}
+      README: ${readme ? readme.substring(0, 1500) : 'Not available'}
+      Package.json: ${packageJson ? packageJson.substring(0, 1000) : 'Not available'}
     `;
 
     const draftPrompt = `
@@ -284,7 +304,6 @@ export class GeminiService {
       CRITICAL REQUIREMENTS:
       1. Dependency Graph: You MUST identify dependencies between tasks.
       2. Scheduling: You MUST estimate 'durationDays' and 'startDayOffset' (from day 0) for EVERY task.
-         - Tasks cannot all start on Day 0. Stagger them based on dependencies.
       
       1. Identify the Tech Stack and Project Goal.
       2. Determine the Development Phase.
@@ -334,7 +353,7 @@ export class GeminiService {
     
     await this.persistence.logAiReasoning(repoName, draftJson.reasoning || 'Draft Complete', 'Pass 1 Done');
 
-    // --- PASS 2: REVIEW & REFINE (The "Rerun") ---
+    // --- PASS 2: REVIEW & REFINE ---
     const reviewPrompt = `
       You are a Quality Assurance & Architecture AI.
       Review this Task List for "${repoName}".
@@ -345,10 +364,9 @@ export class GeminiService {
       CRITIQUE & EXPAND:
       1. Are there missing edge cases?
       2. Is the dependency graph logical? (Ensure no cycles).
-      3. Is the schedule realistic? Do 'startDayOffset' values make sense given dependencies?
+      3. Is the schedule realistic? 
       
       Output a FINAL, REFINED list. 
-      Ensure 'dependencyIndices' are accurate for the new list order.
     `;
 
     const finalResponse = await this.ai.models.generateContent({
@@ -371,12 +389,10 @@ export class GeminiService {
 
     await this.persistence.logAiReasoning(repoName, finalJson.reviewNotes || 'Review Complete', 'Pass 2 Done');
 
-    // --- Post-Process: Link Resolution & Date Calculation ---
     const today = new Date();
     
     // 1. Assign IDs and Dates
     const tasksWithIds = finalRawTasks.map((t: any) => {
-        // Calculate dates based on AI offsets
         const start = new Date(today);
         start.setDate(today.getDate() + (t.startDayOffset || 0));
         
@@ -408,10 +424,8 @@ export class GeminiService {
     return tasksWithIds;
   }
   
-  // --- New: Project Risk Analysis ---
   async analyzeProjectRisks(project: Project): Promise<string> {
       const model = 'gemini-2.5-flash';
-      
       const simplifiedTasks = project.tasks.map(t => ({
           id: t.id,
           title: t.title,
@@ -422,37 +436,21 @@ export class GeminiService {
           endDate: t.endDate
       }));
       
-      const context = JSON.stringify(simplifiedTasks);
-      
       const prompt = `
         Act as a Senior Project Manager. Analyze this project schedule for specific risks.
-        
-        Tasks Data:
-        ${context}
-        
-        Perform the following checks:
-        1. **Circular Dependencies:** Are there any logical loops?
-        2. **Bottlenecks:** Are there single tasks that block many others?
-        3. **Critical Path:** Are there high-priority items with no start date or blocking high-value chains?
-        4. **Optimizations:** Suggest 1-2 quick wins.
-        
-        Format your response in clean **Markdown** (use bullet points, bold text for emphasis).
-        Keep it concise (max 300 words).
+        Tasks Data: ${JSON.stringify(simplifiedTasks)}
+        Checks: Circular Dependencies, Bottlenecks, Critical Path.
+        Format: Markdown. Concise.
       `;
       
       try {
-          const response = await this.ai.models.generateContent({
-              model,
-              contents: prompt
-          });
+          const response = await this.ai.models.generateContent({ model, contents: prompt });
           return response.text || "Analysis complete but no output generated.";
       } catch (e) {
-          console.error('Risk analysis failed', e);
           return "Unable to perform analysis at this time.";
       }
   }
 
-  // --- Existing Methods (Preserved) ---
   async generateProjectStructure(description: string): Promise<{ title: string, description: string, tasks: Task[] }> {
     const model = 'gemini-2.5-flash';
     const responseSchema: Schema = {
@@ -493,7 +491,6 @@ export class GeminiService {
     if (!text) throw new Error('No response');
     const rawData = JSON.parse(text);
 
-    // Hydrate
     const tasksWithIds: Task[] = rawData.tasks.map((t: any) => ({
       ...t, id: crypto.randomUUID(), createdAt: new Date().toISOString()
     }));
@@ -532,39 +529,42 @@ export class GeminiService {
     const model = 'gemini-2.5-flash';
     
     const systemInstruction = `
-      You are ODUS, an advanced AI project manager. Your user's name is ${userName}. Be helpful, concise, and proactive.
-      You have read-access to the user's current project state, open tasks, and file vault provided in the context.
+      You are ODUS, a high-performance Project Intelligence Engine. 
+      User: ${userName}.
+      
+      Core Directive: You have FULL control over the project infrastructure. You can create/delete projects, tasks, and files.
       
       Capabilities:
-      1. Answer questions about the projects/files.
-      2. Search the web for info (Use googleSearch).
-      3. Execute commands by outputting a specific JSON structure.
+      1. Project Management: Create/Delete projects, Add/Update/Delete tasks.
+      2. Data Engineering: Create structured files (Markdown, CSV) in the Vault.
+      3. Navigation: Move the user around the app.
+      4. Web Search: Use Google Search to validate facts, find libraries, or get data before creating files.
 
-      *** COMMANDS ***
-      To execute a command, you MUST output a 'toolCall' JSON object INSTEAD of plain text.
+      *** TOOL PROTOCOL ***
+      To execute an action, output a JSON object with a 'toolCall'.
       
-      1. Create a Task:
-         - User says: "create a new task to refactor the auth service and add it to focus"
-         - YOU RETURN: { "toolCall": { "type": "create_task", "data": { "title": "Refactor the auth service", "addToFocus": true, "projectId": "personal" } } }
-         - Note: If project is not specified, default to "personal". You can infer projectId from context if mentioned.
-
-      2. Update a Task's Status:
-         - User says: "mark 'Refactor auth service' as done"
-         - YOU RETURN: { "toolCall": { "type": "update_task_status", "data": { "taskTitle": "Refactor auth service", "newStatus": "done" } } }
-         - Note: Find the task by its title from the 'openTasks' in the context. Available statuses: 'todo', 'in-progress', 'done'.
-
-      3. Navigate the App:
-         - User says: "show me the calendar"
-         - YOU RETURN: { "toolCall": { "type": "navigate", "data": { "view": "calendar" } } }
-         - Available views: 'dashboard', 'calendar', 'drive', 'github', 'projects', 'mind'.
+      1. CREATE PROJECT:
+         - {"toolCall": {"type": "create_project", "data": {"title": "App Launch", "description": "..."}}}
       
-      4. Create a Note/Document:
-         - User says: "create a note about our next sprint goals"
-         - YOU RETURN: { "toolCall": { "type": "create_note", "data": { "title": "Next Sprint Goals", "content": "..." } } }
-
-      If the user is just chatting, answer normally. Do not use a toolCall.
+      2. DELETE PROJECT:
+         - {"toolCall": {"type": "delete_project", "data": {"projectId": "..."}}}
+         - (Find ID from context).
       
-      Current System Context (JSON):
+      3. TASK OPERATIONS:
+         - Create: {"toolCall": {"type": "create_task", "data": {"title": "Fix bug", "projectId": "personal", "addToFocus": true}}}
+         - Delete: {"toolCall": {"type": "delete_task", "data": {"taskId": "...", "projectId": "..."}}}
+         - Update Status: {"toolCall": {"type": "update_task_status", "data": {"taskTitle": "...", "newStatus": "done"}}}
+
+      4. FILE GENERATION (Critical):
+         - If user asks for a document, guide, or data export, CREATE A FILE.
+         - CSV: Generate VALID comma-separated data. Header row required.
+         - Markdown: Use proper # Headers, tables, and lists.
+         - Output: {"toolCall": {"type": "create_file", "data": {"filename": "sales_q1.csv", "content": "Date,Amount\\n2024-01-01,500...", "mimeType": "text/csv"}}}
+      
+      5. NAVIGATION:
+         - {"toolCall": {"type": "navigate", "data": {"view": "dashboard"}}}
+
+      System Context (JSON):
       ${contextData}
     `;
 
@@ -580,11 +580,13 @@ export class GeminiService {
 
       const text = response.text || '';
       
+      // Attempt to parse tool call from text response if structured as JSON
+      // Note: In a real tool use scenario we would use function calling, but here we simulate it via JSON parsing for broad compatibility
       if (text.trim().startsWith('{') && text.includes('toolCall')) {
           try {
               const json = JSON.parse(text);
               if (json.toolCall) {
-                  return { text: 'Executing command...', toolCall: json.toolCall };
+                  return { text: 'Processing command...', toolCall: json.toolCall, groundingMetadata: response.candidates?.[0]?.groundingMetadata };
               }
           } catch (e) { }
       }

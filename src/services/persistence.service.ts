@@ -105,6 +105,19 @@ export class PersistenceService {
       });
   }
 
+  // --- System Reset ---
+  async resetDatabase(): Promise<void> {
+      if (this.db) {
+          this.db.close();
+      }
+      return new Promise((resolve, reject) => {
+          const req = indexedDB.deleteDatabase(this.dbName);
+          req.onsuccess = () => resolve();
+          req.onerror = () => reject();
+          req.onblocked = () => console.warn('Database delete blocked. Close other tabs.');
+      });
+  }
+
   private performTransaction(storeName: string, mode: IDBTransactionMode, op: (store: IDBObjectStore) => IDBRequest): Promise<any> {
     return new Promise((resolve, reject) => {
       if (!this.db) {
