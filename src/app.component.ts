@@ -3,6 +3,7 @@ import { Component, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProjectService } from './services/project.service';
 import { DriveService } from './services/drive.service';
+import { AuthService } from './services/auth.service';
 import { AppControlService, AppView } from './services/app-control.service';
 import { NotificationService } from './services/notification.service';
 import { ProjectBoardComponent } from './components/project-board.component';
@@ -17,6 +18,7 @@ import { ToastComponent } from './components/ui/toast.component';
 import { LandingPageComponent } from './components/views/landing-page.component';
 import { SettingsModalComponent } from './components/settings-modal.component';
 import { NotificationPanelComponent } from './components/notification-panel.component';
+import { ZenModeComponent } from './components/zen-mode.component';
 
 @Component({
   selector: 'app-root',
@@ -34,7 +36,8 @@ import { NotificationPanelComponent } from './components/notification-panel.comp
     ToastComponent,
     LandingPageComponent,
     SettingsModalComponent,
-    NotificationPanelComponent
+    NotificationPanelComponent,
+    ZenModeComponent
   ],
   template: `
     @if (showLanding()) {
@@ -56,9 +59,24 @@ import { NotificationPanelComponent } from './components/notification-panel.comp
         <!-- Sidebar -->
         <aside class="w-16 lg:w-64 border-r border-white/5 bg-zinc-950/50 backdrop-blur-md flex flex-col shrink-0 z-10 transition-all duration-300 relative group">
           
-          <!-- Header (Minimalist O) -->
-          <div class="p-4 lg:p-6 flex items-center justify-center lg:justify-start gap-3 border-b border-white/5">
-             <span class="block font-bold text-xl text-white">O</span>
+          <!-- Header / User Profile -->
+          <div 
+            class="p-4 lg:p-6 flex items-center justify-center lg:justify-start gap-3 border-b border-white/5 cursor-pointer hover:bg-white/5 transition-colors group/profile"
+            (click)="showSettingsModal.set(true)"
+            title="Open Settings"
+          >
+             <div class="relative">
+                <img 
+                  [src]="authService.currentUser().avatar" 
+                  class="w-8 h-8 rounded-full object-cover border border-white/10 group-hover/profile:border-white/30 transition-colors bg-zinc-900" 
+                  alt="User"
+                />
+                <div class="absolute inset-0 rounded-full border border-white/10 shadow-[0_0_10px_rgba(255,255,255,0.1)] opacity-0 group-hover/profile:opacity-100 transition-opacity"></div>
+             </div>
+             <div class="hidden lg:flex flex-col min-w-0">
+                 <span class="text-xs font-bold text-white tracking-widest uppercase truncate">{{ authService.currentUser().name }}</span>
+                 <span class="text-[9px] text-zinc-500 font-mono">ID: {{ authService.currentUser().id.substring(0,4) }}</span>
+             </div>
           </div>
 
           <!-- Nav -->
@@ -137,6 +155,14 @@ import { NotificationPanelComponent } from './components/notification-panel.comp
 
             <!-- Settings & Notifications -->
              <div class="my-2 border-t border-white/5 mx-2"></div>
+
+             <!-- De-stress Mode -->
+             <button 
+               (click)="showZenMode.set(true)"
+               class="flex items-center justify-center lg:justify-start gap-4 p-3 rounded-lg transition-all text-zinc-500 hover:text-white hover:bg-white/5 group relative">
+               <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+               <span class="hidden lg:block text-xs uppercase tracking-wider font-medium">Zen Mode</span>
+             </button>
              
              <!-- Notification Bell -->
              <button 
@@ -235,6 +261,10 @@ import { NotificationPanelComponent } from './components/notification-panel.comp
             <app-notification-panel (close)="showNotifications.set(false)" />
         }
 
+        @if (showZenMode()) {
+            <app-zen-mode (close)="showZenMode.set(false)" />
+        }
+
         <!-- Drag Overlay -->
         @if (isDragging()) {
           <div class="absolute inset-0 z-50 bg-zinc-900/80 backdrop-blur-sm flex items-center justify-center border-4 border-dashed border-zinc-600 m-4 rounded-xl pointer-events-none">
@@ -261,6 +291,7 @@ import { NotificationPanelComponent } from './components/notification-panel.comp
   `]
 })
 export class AppComponent {
+  authService = inject(AuthService);
   projectService = inject(ProjectService);
   driveService = inject(DriveService);
   appControlService = inject(AppControlService);
@@ -270,6 +301,8 @@ export class AppComponent {
   showCreateModal = signal(false);
   showSettingsModal = signal(false);
   showNotifications = signal(false);
+  showZenMode = signal(false);
+  
   currentView = signal<AppView>('dashboard');
   isDragging = signal(false);
   

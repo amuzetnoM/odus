@@ -357,8 +357,12 @@ export class GithubViewComponent {
               packageJson
           );
           
-          this.log(`[PASS 2] AI Review Loop complete. Refined task list generated.`);
-          this.log(`Generated ${tasks.length} strategic tasks.`);
+          if (tasks.length > 0) {
+              this.log(`[PASS 2] AI Review Loop complete. Refined task list generated.`);
+              this.log(`Generated ${tasks.length} strategic tasks.`);
+          } else {
+              this.log(`WARNING: AI Analysis yielded 0 tasks. Check context size or API limits.`);
+          }
           
           this.projectService.addProject(repo.name, `GitHub Imported: ${repo.description || ''}`, tasks);
           

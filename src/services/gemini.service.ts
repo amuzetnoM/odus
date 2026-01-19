@@ -111,6 +111,12 @@ export class GeminiService {
       }
   }
 
+  // --- Helper: Clean JSON from Markdown ---
+  private cleanJson(text: string): string {
+      const match = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      return match ? match[1].trim() : text.trim();
+  }
+
   // --- Core Generation Logic (Multi-Provider) ---
 
   private async generateText(prompt: string, systemInstruction?: string, jsonSchema?: any): Promise<string> {
@@ -179,7 +185,7 @@ export class GeminiService {
       throw new Error('Provider not configured or invalid.');
   }
 
-  // --- Smart Features (Refactored to use generateText) ---
+  // --- Smart Features ---
 
   async generateManagerialInsight(context: { title: string, description: string, taskCount: number, tasks: Task[] }): Promise<string> {
       const prompt = `
@@ -207,7 +213,6 @@ export class GeminiService {
     `;
     const system = "You are an executive assistant. Be concise.";
     
-    // Schema only works easily with Gemini natively, for others we rely on prompt engineering + JSON mode
     try {
         const text = await this.generateText(prompt, system, this.provider === 'gemini' ? {
             type: Type.OBJECT,
@@ -217,7 +222,7 @@ export class GeminiService {
             }
         } : undefined);
         
-        return JSON.parse(text);
+        return JSON.parse(this.cleanJson(text));
     } catch (e) {
         return { briefing: "Unable to analyze schedule.", dayType: "BALANCED" };
     }
@@ -231,7 +236,7 @@ export class GeminiService {
     
     try {
         const text = await this.generateText(prompt, "You are a routing system.", this.provider === 'gemini' ? { type: Type.OBJECT, properties: { projectId: { type: Type.STRING }}} : undefined);
-        return JSON.parse(text).projectId || 'personal';
+        return JSON.parse(this.cleanJson(text)).projectId || 'personal';
     } catch { return 'personal'; }
   }
 
@@ -244,7 +249,7 @@ export class GeminiService {
               type: Type.OBJECT,
               properties: { taskIds: { type: Type.ARRAY, items: { type: Type.STRING } }, reasoning: { type: Type.STRING } }
           } : undefined);
-          return JSON.parse(text);
+          return JSON.parse(this.cleanJson(text));
       } catch { return { taskIds: [], reasoning: "Error" }; }
   }
 
@@ -260,12 +265,12 @@ export class GeminiService {
                   relatedNodeIds: { type: Type.ARRAY, items: { type: Type.STRING } }
               }
           } : undefined);
-          return JSON.parse(text);
+          return JSON.parse(this.cleanJson(text));
       } catch { return { title: 'New Idea', properties: {}, tags: [], relatedNodeIds: [] }; }
   }
 
   async generateProjectStructure(description: string): Promise<any> {
-      const prompt = `Create project plan: "${description}". Return JSON: { "title": "", "description": "", "tasks": [{ "title": "", "description": "", "status": "todo", "priority": "medium", "startDateOffset": 0, "durationDays": 1 }] }`;
+      const prompt = `Create project plan: "${description}". Return JSON: { "title": "", "description": "", "tasks": [{ "title": "", "description": "", "status": "todo", "priority": "high"|"medium"|"low", "startDateOffset": 0, "durationDays": 1 }] }. IMPORTANT: Mix 'high', 'medium', 'low' priorities accurately.`;
       try {
           const text = await this.generateText(prompt, "Project Planner.", this.provider === 'gemini' ? {
               type: Type.OBJECT,
@@ -275,7 +280,7 @@ export class GeminiService {
                   tasks: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, description: { type: Type.STRING }, status: { type: Type.STRING }, priority: { type: Type.STRING }, startDateOffset: { type: Type.INTEGER }, durationDays: { type: Type.INTEGER }}}}
               }
           } : undefined);
-          return JSON.parse(text);
+          return JSON.parse(this.cleanJson(text));
       } catch { throw new Error('Generation failed'); }
   }
 
@@ -285,20 +290,16 @@ export class GeminiService {
           const text = await this.generateText(prompt, "Project Assistant.", this.provider === 'gemini' ? {
               type: Type.OBJECT, properties: { title: {type:Type.STRING}, description: {type:Type.STRING}, priority: {type:Type.STRING}}
           } : undefined);
-          return JSON.parse(text);
+          return JSON.parse(this.cleanJson(text));
       } catch { return null; }
   }
 
   // --- Complex Methods (Repo Analysis & Chat) ---
-  // These require more robust handling, so we'll simplify the provider switch here for brevity/stability.
-  // Ideally, these would also use the `generateText` adapter, but we might lose streaming/search features if not careful.
-  // For now, if not Gemini, we fallback to a simpler text generation.
 
   async analyzeRepoAndPlan(repoName: string, fileStructure: string, commitHistory: string, readme: string | null, packageJson: string | null): Promise<Task[]> {
-      const prompt = `Analyze Repo: ${repoName}\nFiles: ${fileStructure}\nCommits: ${commitHistory}\nREADME: ${readme}\nPkg: ${packageJson}\n\nCreate a JSON task list: { "tasks": [{ "title", "description", "priority", "status", "durationDays", "startDayOffset" }] }`;
+      const prompt = `Analyze Repo: ${repoName}\nFiles: ${fileStructure}\nCommits: ${commitHistory}\nREADME: ${readme}\nPkg: ${packageJson}\n\nCreate a JSON task list: { "tasks": [{ "title", "description", "priority", "status", "durationDays", "startDayOffset" }] }. \nCRITICAL: Assign 'high' priority to core architecture/bottlenecks, 'medium' to features, 'low' to polish. Varied priorities are required for the roadmap visualization.`;
       
       try {
-          // Pass 1 only for non-Gemini to save tokens/complexity
           const text = await this.generateText(prompt, "CTO. Create exhaustive plan.", this.provider === 'gemini' ? {
               type: Type.OBJECT,
               properties: { tasks: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { 
@@ -306,7 +307,7 @@ export class GeminiService {
               }}}}
           } : undefined);
           
-          const json = JSON.parse(text);
+          const json = JSON.parse(this.cleanJson(text));
           const rawTasks = json.tasks || [];
           
           const today = new Date();
@@ -322,7 +323,7 @@ export class GeminiService {
               };
           });
       } catch (e) {
-          console.error(e);
+          console.error("Repo analysis error:", e);
           return [];
       }
   }
@@ -333,9 +334,6 @@ export class GeminiService {
   }
 
   async chatWithAgent(message: string, contextData: string, history: Content[], userName: string): Promise<AgentResponse> {
-      // NOTE: Search Grounding is ONLY available on Gemini.
-      // If using OpenAI/Anthropic, we lose web search but keep tool calling capability via prompt engineering.
-      
       const system = `
         You are ODUS. User: ${userName}.
         Capabilities: Manage projects, create files.
@@ -357,16 +355,18 @@ export class GeminiService {
               
               const text = res.text || '';
               // Simple parser for simulated tool calls in text
-              if (text.trim().startsWith('{') && text.includes('toolCall')) {
-                  try { return { text: 'Processing...', toolCall: JSON.parse(text).toolCall, groundingMetadata: res.candidates?.[0]?.groundingMetadata }; } catch {}
+              const cleanText = this.cleanJson(text);
+              if (cleanText.startsWith('{') && cleanText.includes('toolCall')) {
+                  try { return { text: 'Processing...', toolCall: JSON.parse(cleanText).toolCall, groundingMetadata: res.candidates?.[0]?.groundingMetadata }; } catch {}
               }
               return { text, groundingMetadata: res.candidates?.[0]?.groundingMetadata };
           } catch { return { text: 'Connection Error.' }; }
       } else {
           // Fallback for others (No Grounding)
           const text = await this.generateText(message, system);
-          if (text.trim().startsWith('{') && text.includes('toolCall')) {
-              try { return { text: 'Processing...', toolCall: JSON.parse(text).toolCall }; } catch {}
+          const cleanText = this.cleanJson(text);
+          if (cleanText.startsWith('{') && cleanText.includes('toolCall')) {
+              try { return { text: 'Processing...', toolCall: JSON.parse(cleanText).toolCall }; } catch {}
           }
           return { text };
       }

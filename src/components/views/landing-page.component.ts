@@ -68,7 +68,7 @@ import { BlueprintsComponent } from './blueprints.component';
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                              </div>
                              <h3 class="text-xl font-light mb-2">Generative Core</h3>
-                             <p class="text-sm text-zinc-500 leading-relaxed">ODUS uses Gemini 2.5 Flash to construct exhaustive project boards from a single prompt, complete with dependencies and scheduling.</p>
+                             <p class="text-sm text-zinc-500 leading-relaxed">ODUS constructs and manages project boards from a single prompt, complete with dependencies and scheduling. It can plan, execute and adapt to ensure successful delivery.</p>
                         </div>
 
                         <div class="p-8 border border-white/5 bg-zinc-950/50 rounded-2xl hover:border-white/20 transition-colors group">

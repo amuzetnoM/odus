@@ -91,8 +91,8 @@ export class SuccessRoadmapComponent implements OnDestroy {
         const height = container.clientHeight;
         
         // 1. Filter & Prepare Data
-        // Focus on active tasks
         const activeTasks = allTasks.filter(t => t.status !== 'done');
+        
         if (activeTasks.length === 0) {
             d3.select(container).append('div')
               .attr('class', 'h-full flex items-center justify-center text-zinc-700 text-xs uppercase tracking-widest')
@@ -100,30 +100,51 @@ export class SuccessRoadmapComponent implements OnDestroy {
             return;
         }
 
-        // 2. Identify Critical Path (Heuristic: High Priority chain or Date chain)
-        // We define the "Straight Path" as the sequence of High Priority items sorted by date
-        const highPriority = activeTasks.filter(t => t.priority === 'high').sort((a,b) => {
+        // 2. Identify Critical Path (Robust Heuristics)
+        const criticalSet = new Set<string>();
+
+        // Sort by date to understand flow
+        const sortedByDate = [...activeTasks].sort((a,b) => {
             const da = a.endDate ? new Date(a.endDate).getTime() : 0;
             const db = b.endDate ? new Date(b.endDate).getTime() : 0;
             return da - db;
         });
 
-        // Add them to a Set for O(1) lookup
-        const criticalIds = new Set(highPriority.map(t => t.id));
-        
-        // If no high priority, take the medium ones
-        if (criticalIds.size === 0) {
-             activeTasks.filter(t => t.priority === 'medium').forEach(t => criticalIds.add(t.id));
+        // Pass 1: High Priority (Explicit Business Value)
+        activeTasks.filter(t => t.priority === 'high').forEach(t => criticalSet.add(t.id));
+
+        // Pass 2: Structural Hubs (If roadmap is too thin)
+        if (criticalSet.size < 3) {
+            const blockedCounts = new Map<string, number>();
+            activeTasks.forEach(t => {
+                (t.dependencyIds || []).forEach((depId: string) => {
+                    blockedCounts.set(depId, (blockedCounts.get(depId) || 0) + 1);
+                });
+            });
+            // Add top blockers
+            [...blockedCounts.entries()]
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 3)
+                .forEach(([id]) => criticalSet.add(id));
+        }
+
+        // Pass 3: Temporal Spine (Ensure we have a beginning, middle, and end)
+        if (criticalSet.size < 3 && sortedByDate.length > 0) {
+            criticalSet.add(sortedByDate[0].id); // Start
+            if (sortedByDate.length > 2) criticalSet.add(sortedByDate[Math.floor(sortedByDate.length / 2)].id); // Middle
+            criticalSet.add(sortedByDate[sortedByDate.length - 1].id); // End
         }
 
         // 3. Build Nodes & Links
         const nodes = activeTasks.map(t => ({
             id: t.id,
             title: t.title,
-            isCritical: criticalIds.has(t.id),
+            isCritical: criticalSet.has(t.id),
             priority: t.priority,
             color: t.projectColor,
-            r: criticalIds.has(t.id) ? 6 : 4, // Slightly smaller base radius for cleaner look
+            r: criticalSet.has(t.id) ? 6 : 4,
+            startDate: t.startDate,
+            endDate: t.endDate,
             ...t
         }));
 
@@ -140,12 +161,15 @@ export class SuccessRoadmapComponent implements OnDestroy {
             }
         });
 
-        // B. Implicit "Success Path" Links (Chain the critical items together)
-        const criticalNodes = nodes.filter(n => n.isCritical).sort((a,b) => {
-             const da = a.endDate ? new Date(a.endDate).getTime() : 0;
-             const db = b.endDate ? new Date(b.endDate).getTime() : 0;
-             return da - db;
-        });
+        // B. Implicit "Flow" Links (Chain critical nodes by date)
+        const criticalNodes = nodes
+            .filter(n => n.isCritical)
+            .sort((a,b) => {
+                // Stable sort for critical path
+                const da = a.endDate ? new Date(a.endDate).getTime() : 0;
+                const db = b.endDate ? new Date(b.endDate).getTime() : 0;
+                return da - db;
+            });
 
         for (let i = 0; i < criticalNodes.length - 1; i++) {
             links.push({ 
@@ -157,7 +181,6 @@ export class SuccessRoadmapComponent implements OnDestroy {
         }
 
         // 4. Force Simulation
-        // We want a left-to-right flow.
         const svg = d3.select(container).append('svg')
             .attr('width', width)
             .attr('height', height)
@@ -166,7 +189,6 @@ export class SuccessRoadmapComponent implements OnDestroy {
         // Gradient & Filter Definitions
         const defs = svg.append('defs');
         
-        // Path Gradient
         const gradient = defs.append('linearGradient')
             .attr('id', 'pathGradient')
             .attr('x1', '0%')
@@ -177,7 +199,6 @@ export class SuccessRoadmapComponent implements OnDestroy {
         gradient.append('stop').attr('offset', '50%').attr('stop-color', '#22d3ee').attr('stop-opacity', 0.4);
         gradient.append('stop').attr('offset', '100%').attr('stop-color', '#22d3ee').attr('stop-opacity', 0.1);
 
-        // Neon Glow Filter
         const filter = defs.append('filter')
             .attr('id', 'neon-glow')
             .attr('x', '-50%')
@@ -193,31 +214,29 @@ export class SuccessRoadmapComponent implements OnDestroy {
         feMerge.append('feMergeNode').attr('in', 'coloredBlur');
         feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
 
-        // Define positioning based on sequence
-        // Distribute Critical Nodes evenly across X axis
-        const xStep = width / (criticalNodes.length + 2);
-        
+        // Pin Critical Nodes to the Spine
+        const xStep = width / (criticalNodes.length + 1);
         criticalNodes.forEach((n, i) => {
             n.fx = xStep * (i + 1);
-            n.fy = height / 2; // Lock to center line
+            n.fy = height / 2; // Lock vertical
         });
 
         this.simulation = d3.forceSimulation(nodes as any)
             .force('link', d3.forceLink(links).id((d: any) => d.id).distance(60).strength(0.5))
             .force('charge', d3.forceManyBody().strength(-150))
             .force('collide', d3.forceCollide().radius(20))
-            // Tangent nodes gravitate towards their critical parents but float
-            .force('y', d3.forceY(height / 2).strength(0.15))
+            // Non-critical nodes float around the middle, pulled slightly to their date position relative to width
+            .force('y', d3.forceY(height / 2).strength(0.1))
             .force('x', d3.forceX((d: any) => {
-                if (d.isCritical) return d.fx; 
-                return width / 2;
+                if (d.isCritical) return d.fx;
+                return width / 2; // Default center pull for others
             }).strength(0.05));
 
-        // Draw 'Success Line' (The straight path background)
+        // Draw 'Success Line'
         svg.append('line')
-            .attr('x1', 0)
+            .attr('x1', xStep)
             .attr('y1', height / 2)
-            .attr('x2', width)
+            .attr('x2', width - xStep)
             .attr('y2', height / 2)
             .attr('stroke', 'url(#pathGradient)')
             .attr('stroke-width', 2)
@@ -242,7 +261,6 @@ export class SuccessRoadmapComponent implements OnDestroy {
                 .on('drag', dragged)
                 .on('end', dragended));
 
-        // Outer Glow for Critical (Animated via CSS)
         node.filter((d: any) => d.isCritical)
             .append('circle')
             .attr('r', 12)
@@ -250,7 +268,6 @@ export class SuccessRoadmapComponent implements OnDestroy {
             .attr('stroke', (d: any) => d.color || '#fff')
             .attr('class', 'critical-node-glow');
 
-        // Main Circle
         node.append('circle')
             .attr('r', (d: any) => d.r)
             .attr('fill', '#18181b')
@@ -258,7 +275,6 @@ export class SuccessRoadmapComponent implements OnDestroy {
             .attr('stroke-width', (d: any) => d.isCritical ? 2 : 1)
             .style('filter', (d: any) => d.isCritical ? 'url(#neon-glow)' : 'none');
 
-        // Label
         node.append('text')
             .attr('dy', (d: any) => d.isCritical ? -18 : 15)
             .attr('text-anchor', 'middle')

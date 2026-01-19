@@ -1,5 +1,5 @@
 
-import { Component, inject, signal, effect, computed, ElementRef, viewChild } from '@angular/core';
+import { Component, inject, signal, effect, computed, ElementRef, viewChild, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GeminiService } from '../services/gemini.service';
@@ -26,15 +26,15 @@ interface ChatMessage {
   template: `
     <!-- Floating Draggable Trigger -->
     <div 
-      class="fixed z-50 transition-transform active:scale-95"
-      [style.left.px]="buttonPosition().x"
-      [style.top.px]="buttonPosition().y"
+      class="fixed z-50 select-none touch-none"
+      [style.transform]="'translate3d(' + buttonPosition().x + 'px, ' + buttonPosition().y + 'px, 0)'"
       (mousedown)="startDrag($event)"
       (touchstart)="startDrag($event)"
     >
         <button 
-          (click)="toggleChat()"
-          class="w-14 h-14 bg-white text-black rounded-full shadow-[0_0_20px_rgba(255,255,255,0.3)] flex items-center justify-center cursor-grab active:cursor-grabbing group border-2 border-transparent hover:border-zinc-300 relative">
+          (click)="handleButtonClick()"
+          class="w-14 h-14 bg-white text-black rounded-full shadow-[0_5px_25px_rgba(0,0,0,0.5)] flex items-center justify-center cursor-grab active:cursor-grabbing group border-2 border-transparent hover:border-zinc-300 relative transition-transform active:scale-90"
+          [class.animate-bounce-gentle]="!isDragging && !isOpen()">
           @if (!isOpen()) {
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
           } @else {
@@ -48,12 +48,12 @@ interface ChatMessage {
     <!-- Chat Interface -->
     @if (isOpen()) {
       <div 
-        class="fixed bg-zinc-950/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden z-40 animate-scale-in"
+        class="fixed bg-zinc-950/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden z-40 animate-scale-in origin-bottom-right"
         [style]="chatWindowStyle()"
       >
         
         <!-- Header -->
-        <div class="p-4 border-b border-white/5 bg-zinc-900/50 flex justify-between items-center shrink-0 cursor-move" (mousedown)="startDrag($event)">
+        <div class="p-4 border-b border-white/5 bg-zinc-900/50 flex justify-between items-center shrink-0">
            <div>
              <h3 class="text-sm font-bold text-white tracking-widest">ODUS AI</h3>
              <p class="text-[10px] text-zinc-500">Global Context Aware • Web Enabled</p>
@@ -175,6 +175,12 @@ interface ChatMessage {
   styles: [`
     @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
     .animate-scale-in { animation: scaleIn 0.2s ease-out; }
+    
+    @keyframes bounceGentle {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+    }
+    .animate-bounce-gentle { animation: bounceGentle 3s infinite ease-in-out; }
   `]
 })
 export class AiAgentComponent {
@@ -184,6 +190,7 @@ export class AiAgentComponent {
   authService = inject(AuthService);
   appControlService = inject(AppControlService);
   notificationService = inject(NotificationService);
+  zone = inject(NgZone);
   
   isOpen = signal(false);
   messages = signal<ChatMessage[]>([]);
@@ -192,59 +199,58 @@ export class AiAgentComponent {
   isListening = signal(false);
   scrollContainer = viewChild<ElementRef>('scrollContainer');
   
-  // Drag State
+  // Physics State
   buttonPosition = signal({ x: window.innerWidth - 80, y: window.innerHeight - 80 });
+  
   isDragging = false;
-  dragOffset = { x: 0, y: 0 };
-  windowWidth = signal(window.innerWidth);
-  windowHeight = signal(window.innerHeight);
+  private dragOffset = { x: 0, y: 0 };
+  private velocity = { x: 0, y: 0 };
+  private lastDragPos = { x: 0, y: 0 };
+  private lastDragTime = 0;
+  private animationFrameId = 0;
+  private isThrown = false;
+  
+  // Boundaries
+  private windowWidth = window.innerWidth;
+  private windowHeight = window.innerHeight;
   
   private recognition: any;
 
   // Intelligent Chat Positioning
   chatWindowStyle = computed(() => {
       const btn = this.buttonPosition();
-      const ww = this.windowWidth();
-      const wh = this.windowHeight();
+      const ww = this.windowWidth;
+      const wh = this.windowHeight;
       
       const width = 400; // Base width
       const height = 600; // Base height
       
-      // Horizontal Logic: Anchor to left of button if button is on right half, else right of button
-      // But ensure it fits within margins (10px)
+      // Calculate best position
       let left = 0;
       let transformOriginX = 'center';
       
       if (btn.x > ww / 2) {
-          // Button is on right side -> Chat goes to left of button
-          left = btn.x - width + 56; // 56 is approx button width/overlap
+          left = btn.x - width + 56;
           transformOriginX = 'right';
       } else {
-          // Button is on left side -> Chat goes to right of button
           left = btn.x;
           transformOriginX = 'left';
       }
       
-      // Clamp Horizontal
       left = Math.max(10, Math.min(ww - width - 10, left));
 
-      // Vertical Logic: Prefer Above button
       let top = 0;
-      let heightResult = Math.min(height, wh * 0.7); // Cap height at 70% of screen
+      let heightResult = Math.min(height, wh * 0.7);
       let transformOriginY = 'bottom';
 
-      // Default: Place bottom of chat near top of button
       top = btn.y - heightResult - 10;
 
-      // If that pushes off top, place below button
       if (top < 10) {
-          top = btn.y + 60; // Button height + margin
+          top = btn.y + 60;
           transformOriginY = 'top';
       }
       
-      // Final Clamp Vertical
       if (top + heightResult > wh - 10) {
-          // If going off bottom, force it to bottom margin and shrink height if needed
           top = wh - heightResult - 10;
       }
       
@@ -276,19 +282,15 @@ export class AiAgentComponent {
          if (this.messages().length) this.scrollToBottom();
       });
 
-      // Global Listeners for Drag
+      // Global Listeners for Drag Physics
       window.addEventListener('mousemove', this.onDrag.bind(this));
       window.addEventListener('mouseup', this.stopDrag.bind(this));
       window.addEventListener('touchmove', this.onDrag.bind(this), { passive: false });
       window.addEventListener('touchend', this.stopDrag.bind(this));
       window.addEventListener('resize', () => {
-          this.windowWidth.set(window.innerWidth);
-          this.windowHeight.set(window.innerHeight);
-          // Keep button on screen
-          this.buttonPosition.set({ 
-              x: Math.min(this.buttonPosition().x, window.innerWidth - 70),
-              y: Math.min(this.buttonPosition().y, window.innerHeight - 70)
-          });
+          this.windowWidth = window.innerWidth;
+          this.windowHeight = window.innerHeight;
+          this.enforceBoundaries();
       });
 
       // System messages logic
@@ -318,14 +320,16 @@ export class AiAgentComponent {
       }
   }
 
-  // --- Drag Logic ---
+  // --- Physics & Drag Logic ---
+  
   startDrag(event: MouseEvent | TouchEvent) {
-      // If it's a touch event, prevent default scrolling
-      if (event.type === 'touchstart') {
-          // event.preventDefault(); // Optional, depending on desired behavior
-      }
-      
+      if (this.isOpen()) return; // Don't drag if chat is open
+
       this.isDragging = true;
+      this.isThrown = false;
+      this.velocity = { x: 0, y: 0 }; // Reset velocity
+      cancelAnimationFrame(this.animationFrameId); // Stop any existing physics
+
       const clientX = 'touches' in event ? event.touches[0].clientX : (event as MouseEvent).clientX;
       const clientY = 'touches' in event ? event.touches[0].clientY : (event as MouseEvent).clientY;
       
@@ -333,29 +337,141 @@ export class AiAgentComponent {
           x: clientX - this.buttonPosition().x,
           y: clientY - this.buttonPosition().y
       };
+
+      this.lastDragPos = { x: clientX, y: clientY };
+      this.lastDragTime = performance.now();
   }
 
   onDrag(event: MouseEvent | TouchEvent) {
       if (!this.isDragging) return;
-      event.preventDefault(); // Stop selection/scrolling
+      event.preventDefault(); 
       
       const clientX = 'touches' in event ? event.touches[0].clientX : (event as MouseEvent).clientX;
       const clientY = 'touches' in event ? event.touches[0].clientY : (event as MouseEvent).clientY;
 
+      // Calculate instantaneous velocity
+      const now = performance.now();
+      const dt = now - this.lastDragTime;
+      if (dt > 0) {
+          this.velocity = {
+              x: (clientX - this.lastDragPos.x) / dt * 15, // Scale up for "throw" feel
+              y: (clientY - this.lastDragPos.y) / dt * 15
+          };
+      }
+      
+      this.lastDragPos = { x: clientX, y: clientY };
+      this.lastDragTime = now;
+
+      // Update Position
       this.buttonPosition.set({
-          x: Math.max(10, Math.min(window.innerWidth - 70, clientX - this.dragOffset.x)),
-          y: Math.max(10, Math.min(window.innerHeight - 70, clientY - this.dragOffset.y))
+          x: clientX - this.dragOffset.x,
+          y: clientY - this.dragOffset.y
       });
   }
 
   stopDrag() {
+      if (!this.isDragging) return;
       this.isDragging = false;
+      
+      // If velocity is significant, trigger throw physics
+      const speed = Math.sqrt(this.velocity.x * this.velocity.x + this.velocity.y * this.velocity.y);
+      if (speed > 0.5) {
+          this.isThrown = true;
+          this.zone.runOutsideAngular(() => this.runPhysicsLoop());
+      } else {
+          this.enforceBoundaries();
+      }
+  }
+  
+  handleButtonClick() {
+      // If we were dragging/throwing, don't toggle chat immediately
+      // Only toggle if velocity is essentially zero
+      const speed = Math.sqrt(this.velocity.x * this.velocity.x + this.velocity.y * this.velocity.y);
+      if (!this.isThrown && speed < 1) {
+          this.toggleChat();
+      }
+  }
+
+  // --- Physics Loop ---
+  runPhysicsLoop() {
+      const friction = 0.94;
+      const bounce = 0.7;
+      const stopThreshold = 0.1;
+
+      const loop = () => {
+          if (this.isDragging) return;
+
+          let { x, y } = this.buttonPosition();
+          let { x: vx, y: vy } = this.velocity;
+
+          // Apply Velocity
+          x += vx;
+          y += vy;
+
+          // Apply Friction
+          vx *= friction;
+          vy *= friction;
+
+          // Bounce logic
+          const size = 56; // Button size
+          const margin = 10;
+          
+          let hitWall = false;
+
+          if (x < margin) {
+              x = margin;
+              vx = -vx * bounce;
+              hitWall = true;
+          } else if (x > this.windowWidth - size - margin) {
+              x = this.windowWidth - size - margin;
+              vx = -vx * bounce;
+              hitWall = true;
+          }
+
+          if (y < margin) {
+              y = margin;
+              vy = -vy * bounce;
+              hitWall = true;
+          } else if (y > this.windowHeight - size - margin) {
+              y = this.windowHeight - size - margin;
+              vy = -vy * bounce;
+              hitWall = true;
+          }
+          
+          this.velocity = { x: vx, y: vy };
+          
+          // Update Signal (inside Angular Zone to reflect in template? No, perf better outside, but need to update view)
+          // We can update signal, Angular signals are fine.
+          this.zone.run(() => {
+             this.buttonPosition.set({ x, y });
+          });
+
+          // Stop condition
+          if (Math.abs(vx) < stopThreshold && Math.abs(vy) < stopThreshold) {
+              this.isThrown = false;
+              this.velocity = { x: 0, y: 0 };
+          } else {
+              this.animationFrameId = requestAnimationFrame(loop);
+          }
+      };
+      
+      this.animationFrameId = requestAnimationFrame(loop);
+  }
+
+  enforceBoundaries() {
+      // Keep button on screen if resize happens or drag ends gently
+      const { x, y } = this.buttonPosition();
+      const size = 56;
+      const margin = 10;
+      
+      const newX = Math.max(margin, Math.min(this.windowWidth - size - margin, x));
+      const newY = Math.max(margin, Math.min(this.windowHeight - size - margin, y));
+      
+      this.buttonPosition.set({ x: newX, y: newY });
   }
 
   toggleChat() {
-      if (!this.isDragging) {
-          this.isOpen.set(!this.isOpen());
-      }
+      this.isOpen.set(!this.isOpen());
   }
 
   toggleVoice() {
